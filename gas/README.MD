@@ -1,6 +1,10 @@
-## Assembler
-The project only contains small programs to help me learn assembler.
+## GNU Assembler examples
 
-[gas](./gas) Contains examples using the GNU Assembler.
-[nasm](./nasm) Contains examples using the Netwide Assembler.
-[c](./c) C programs used for viewing the generated assembler code.
+### Assemble
+
+    as -g -arch x86_64 64bit.s -o 64bit.o
+
+### Link
+
+    ld -e _start -macosx_version_min 10.8 -lSystem -arch x86_64 64bit.o -o 64bit
+
