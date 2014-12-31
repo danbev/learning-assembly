@@ -14,15 +14,15 @@ We can see that ```write``` has the value ```4```, but when we specify this in [
 
     movq $0x2000004, %rax   # write call (see SYSCALL_CONSTRUCT_UNIX). 
 
-Why ```0x2000004``` instead of simply ```4```?
+Why ```0x2000004``` instead of simply ```4```?  
 The reason for this can be found in [syscall_sw.h]( http://www.opensource.apple.com/source/xnu/xnu-792.13.8/osfmk/mach/i386/syscall_sw.h).
 This is not a public header so it will probably not be available on your system. 
 
 In XNU, the POSIX system calls make up only of four system call classes:
- UNIX (1)
- MACH (2)
- MDEP (3)
- DIAG (4)
+1. UNIX (1)
+2. MACH (2)
+3. MDEP (3)
+4. DIAG (4)
 In 64-bit, all call types are positive, but the most significant byte contains the value of SYSCALL_CLASS from the preceding table.
 The value is checked by shifting the system call number SYSCALL_CLASS_SHIFT (=24) bits.
 2 << 24 = 2000000 hex
