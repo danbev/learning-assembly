@@ -32,6 +32,38 @@ The value is checked by shifting the system call number
 	2 << 24 = 2000000 hex
 
 
+The next thing that I did not understand was this line:
+
+    movq msg@GOTPCREL(%rip), %rsi # string to print. rsi is used for the second argument to functions in x86_64
+
+GOTPCEL is short for Global Offset Table and Procedure Linkage Table (I think). From what I understand this has to do with relocations. So lets look
+what relocation information can be found in the mach object file:
+
+    $ otool -r 64bit.o
+    64bit.o:
+    Relocation information (__TEXT,__text) 2 entries
+    address  pcrel length extern type    scattered symbolnum/value
+    00000018 1     2      1      1       0         1
+    00000011 1     2      1      3       0         0
+    Relocation information (__DATA,__data) 2 entries
+    address  pcrel length extern type    scattered symbolnum/value
+    00000011 0     2      1      5       0         0
+    00000011 0     2      1      0       0         1
+    Relocation information (__DWARF,__debug_line) 3 entries
+    address  pcrel length extern type    scattered symbolnum/value
+    0000002b 0     3      0      0       0         1
+    00000006 0     2      0      5       0         3
+    00000006 0     2      0      0       0         3
+    Relocation information (__DWARF,__debug_info) 4 entries
+    address  pcrel length extern type    scattered symbolnum/value
+    000000a4 0     3      0      0       0         1
+    0000009c 0     3      0      0       0         1
+    00000018 0     3      0      0       0         1
+    00000010 0     3      0      0       0         1
+    Relocation information (__DWARF,__debug_aranges) 1 entries
+    address  pcrel length extern type    scattered symbolnum/value
+    00000010 0     3      0      0       0         1
+
 #### Assemble 64Bit.s
 
     as -g -arch x86_64 64bit.s -o 64bit.o
@@ -39,4 +71,24 @@ The value is checked by shifting the system call number
 #### Link 64Bit.s
 
     ld -e _start -macosx_version_min 10.8 -lSystem -arch x86_64 64bit.o -o 64bit
+
+### Mach Object file (mach-o)
+
+    otool -h 64bit.o
+    64bit.o:
+    Mach header
+           magic cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+     0xfeedfacf 16777223          3  0x00          1     3        656 0x00000000
+
+The magic number can be found in ```/usr/include/mach-o/loader.h```:
+
+    #define MH_MAGIC_64 0xfeedfacf /* the 64-bit mach magic number */
+    
+The ```cputype``` can be located in ```/usr/include/mach/machine.h```:
+
+    
+
+
+
+    
 
