@@ -1,4 +1,6 @@
-.text
+# Mach-O has segments that contain sections
+# __TEXT is a segment and __text a section
+.section __TEXT, __text
 .globl _main
 
 _main:
@@ -11,7 +13,6 @@ _main:
     call _puts
     add $0x8, %esp
     
-    #clr %eax
     mov $1, %eax
     pop %ebp
     ret
