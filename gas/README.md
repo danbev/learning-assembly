@@ -1,5 +1,14 @@
 ## GNU Assembler examples
 
+### Building
+
+    make
+
+All binaries will be placed in the `out` directory.
+
+
+### learning_i386
+Just a hello world example that prints something to standard out.
 
 ### 64Bit.s
 This is a example of using system calls in a x86_64 arch. There are a few interesting/different things that I ran into 

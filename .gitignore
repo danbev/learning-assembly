@@ -1,3 +1,2 @@
 *.o
-*.s
-nasm/hello
+*.swp
