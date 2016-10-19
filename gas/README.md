@@ -7,6 +7,28 @@
 All binaries will be placed in the `out` directory.
 
 
+### arch type
+When using `as` you can specify the architecture type using `-arch`
+
+    man 3 arch
+
+If no target architecture is specified, it defaults to the architecture of the host it is running on.
+
+
+
+### Segments
+In Mach-O sections are segments that contains sections, for example:
+
+    .section __TEXT, __text
+
+`__TEXT` is the segment and `__text` the section.
+
+
+### System calls
+This is done using the `syscall` instruction.
+
+/usr/include/sys/syscall.h
+
 ### learning_i386
 Just a hello world example that prints something to standard out.
 
