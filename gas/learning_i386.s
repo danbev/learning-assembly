@@ -4,7 +4,6 @@
 .globl _main
 
 _main:
-    nop
     push %ebp
     mov %esp, %ebp
     
@@ -20,4 +19,3 @@ _main:
 .data
 msg:
     .ascii "Learning Assembler\0"
-    len = . - msg
