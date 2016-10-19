@@ -11,7 +11,7 @@ cpuid: cpuid.s out
 	ld -e _start -macosx_version_min $(MACOSX) -lSystem -arch x86_64 $@.o -o $@
 
 learning_i386: learning_i386.s out
-	as -W -arch i386 -o $(OUT)/$@.o $@.s
+	as -W -g -arch i386 -o $(OUT)/$@.o $@.s
 	ld -arch i386 -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o -lSystem
 
 .PHONY: clean
