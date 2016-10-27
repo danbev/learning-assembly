@@ -83,7 +83,7 @@ of parameters are).
     0x100000f70 <+0>:  pushq  %rbp
     0x100000f71 <+1>:  movq   %rsp, %rbp
     0x100000f74 <+4>:  movl   $0x0, -0x4(%rbp) ## padding?
-->  0x100000f7b <+11>: movb   $0x1, -0x5(%rbp) ## flag = true
+    0x100000f7b <+11>: movb   $0x1, -0x5(%rbp) ## flag = true
     0x100000f7f <+15>: movl   $0x5, -0xc(%rbp)
     0x100000f86 <+22>: cmpl   $0x5, -0xc(%rbp)
     0x100000f8a <+26>: jne    0x100000f94               ; <+36> at while.cc:10
@@ -108,7 +108,7 @@ Compared to using while(flag):
     0x100000f70 <+0>:  pushq  %rbp
     0x100000f71 <+1>:  movq   %rsp, %rbp
     0x100000f74 <+4>:  movl   $0x0, -0x4(%rbp) ## padding?
-->  0x100000f7b <+11>: movb   $0x1, -0x5(%rbp) ## flag = true
+    0x100000f7b <+11>: movb   $0x1, -0x5(%rbp) ## flag = true
     0x100000f7f <+15>: movl   $0x5, -0xc(%rbp) ## a = 5
     0x100000f86 <+22>: cmpl   $0x5, -0xc(%rbp) ## a == 5
     0x100000f8a <+26>: jne    0x100000f94               ; <+36> at while.cc:10
