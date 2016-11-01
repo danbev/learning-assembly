@@ -14,6 +14,10 @@ learning_i386: learning_i386.s out
 	as -W -g -arch i386 -o $(OUT)/$@.o $@.s
 	ld -arch i386 -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o -lSystem
 
+jump: jump.s out
+	as -W -g -arch x86_64 -o $(OUT)/$@.o $@.s
+	ld -arch x86_64 -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o -lSystem
+
 .PHONY: clean
 
 clean: 
