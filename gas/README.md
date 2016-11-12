@@ -120,6 +120,10 @@ The ```cputype``` can be located in ```/usr/include/mach/machine.h```:
     
 
 
+### otool
+Dump sections:
 
+    $ otool -s __TEXT __text jump.o
+    $ otool -s __DATA __data jump.o
     
 
