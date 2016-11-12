@@ -18,6 +18,10 @@ jump: jump.s out
 	as -W -g -arch x86_64 -o $(OUT)/$@.o $@.s
 	ld -arch x86_64 -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o -lSystem
 
+cli: cli.s out
+	as -W -g -arch x86_64 -o $(OUT)/$@.o $@.s
+	ld -e _main -lc -arch x86_64 -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o
+
 .PHONY: clean
 
 clean: 
