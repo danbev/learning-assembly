@@ -8,9 +8,9 @@ argc:
 _main:
    pushq %rbp
    movq %rsp,%rbp
-   movq +24(%rbp), %rsi
+   movq %rdi, %rsi
    movq argc@GOTPCREL(%rip), %rdi
-   call _printf
+   callq _printf
    movl $0x2000001, %eax # exit code
    movq $0, %rdi # return code
    syscall
