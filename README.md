@@ -6,8 +6,13 @@ The project only contains small programs to help me learn assembler.
 [c](./c) C programs used for viewing the generated assembler code.  
 
 ### Registers
-ebp     The stack base pointer
-esp     The stack pointer
+rax
+rbx
+rcx
+rdx
+rsi
+rbp     The stack base pointer
+rsp     The stack pointer
 
 rdi     used to pass 1st argument to functions
 rsi     used to pass 2nd argument to functions
@@ -15,6 +20,12 @@ rdx     used to pass 3rd argument to functions
 rcx     used to pass 4th argument to functions
 r8      used to pass 5th argument to functions
 r9      used to pass 6th argument to functions
+r10     
+r11     
+r12     
+r13     
+r14     
+r15     
 
 ### The Stack
 The stack consists of memory locations reserved at the end of the memory area allocated to the program. 
@@ -83,6 +94,22 @@ but the calling function. What you should do it reset the stack to the state bef
 there were now parameters on the stack. You can do this by adding 4,8,12 (what ever the size and number
 of parameters are).
 
+### Inspecting the stack
+When you start a program in `lldb` you can take a look at the stack pointer memory location using:
+
+    $ lldb ./out/cli 10 20
+    (lldb) breakpoint set  --file cli.s --line 9
+    (lldb) run
+    (lldb) register read rsp
+     rsp = 0x00007fff5fbfeb98
+
+    (lldb) memory read --size 4 --format x 0x00007fff5fbfeb98
+0x7fff5fbfeb98: 0x850125ad 0x00007fff 0x850125ad 0x00007fff
+0x7fff5fbfeba8: 0x00000000 0x00000000 0x00000002 0x00000000
+
+What I'm trying to figure out is where `argc` might be. We can see that `0x7fff5fbfeba8` has `2` which matches our two parameters (the program name and the argument).
+What I was missing was that when using a C runtime argc is passed in rdi and not on the stack. I was looking for the value on the stack which.
+
 ### Compare while(flat) to while(flag == true)
 (while flag == true) :
 
@@ -131,3 +158,13 @@ Compared to using while(flag):
     0x100000fa9 <+57>: popq   %rbp
     0x100000faa <+58>: retq
 
+### Inspecting images
+To list the current executable and its dependant images:
+
+    $ target modules list
+    or
+    $ image list
+
+You can dump the object file using:
+
+    (lldb) target modules dump objfile /Users/danielbevenius/work/assembler/gas/out/cli
