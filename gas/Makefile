@@ -22,6 +22,10 @@ cli: cli.s out
 	as -static -W -g -arch x86_64 -o $(OUT)/$@.o $@.s
 	ld -e _main -arch x86_64 -lc -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o
 
+loop: loop.s out
+	as -static -W -g -arch x86_64 -o $(OUT)/$@.o $@.s
+	ld -e _main -arch x86_64 -lc -macosx_version_min $(MACOSX) -o $(OUT)/$@ $(OUT)/$@.o
+
 .PHONY: clean
 
 clean: 
