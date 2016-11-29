@@ -4,7 +4,7 @@ OUT := out
 .DEFAULT_GOAL := learning_i386
 
 out: 
-	mkdir out
+	mkdir $(OUT)
 
 cpuid: cpuid.s out
 	as -W -arch x86_64 $(OUT)/$@.s -o $@.o
@@ -29,4 +29,4 @@ loop: loop.s out
 .PHONY: clean
 
 clean: 
-	rm -fr out
+	rm -fr $(OUT)
