@@ -8,20 +8,15 @@ values:
 
 _main:
    subq $8, %rsp
-   movabsq $0, %rcx
-   leaq values(%rip), %rax
+   movabsq $0, %r12
+   leaq values(%rip), %r13
 loop:
-   movq (%rax, %rcx, 8), %rsi
+   movq (%r13, %r12, 4), %rsi
    movq argc@GOTPCREL(%rip), %rdi
    callq _printf
-   inc %rcx
-   movq (%rax, %rcx, 8), %rsi
-   movq argc@GOTPCREL(%rip), %rdi
-   callq _printf
-   #addq $8, %rsp
-   #inc %rcx
-   #cmpq $3, %rcx
-   #jne loop
+   incq %r12
+   cmpq $5, %r12
+   jne loop
    movl $0x2000001, %eax # exit code
    movq $0, %rdi # return code
    syscall
