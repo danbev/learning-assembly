@@ -1,5 +1,5 @@
 .section __DATA, __data
-argc:
+val:
   .asciz "Value =  %d\n"
 values:
   .int 10, 20, 30, 40, 50
@@ -12,7 +12,7 @@ _main:
    leaq values(%rip), %r13
 loop:
    movq (%r13, %r12, 4), %rsi
-   movq argc@GOTPCREL(%rip), %rdi
+   movq val@GOTPCREL(%rip), %rdi
    callq _printf
    incq %r12
    cmpq $5, %r12
