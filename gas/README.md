@@ -95,6 +95,54 @@ what relocation information can be found in the mach object file:
     address  pcrel length extern type    scattered symbolnum/value
     00000010 0     3      0      0       0         1
 
+### Code models
+In x64 references to code and data are done using instruction pointer relative (RIP) addressing modes.
+
+
+
+When the linker creates a shared library it does not know where in the process's address space it might be loaded. This causes a problem for code and data references which need to point to the correct memory locations.
+My view of this is that When the linker takes multiple object files and merges the sections, like .text, .data etc, merge might not be a good
+description but rather adds them sequentially to the resulting object file. If the source files refer to absolut
+locations in it's .data section these might not be in the same place after linking ito the resulting object file.
+Solving this problem can be done using position independant code (PIC) or load-time relocation.
+
+### Position Independant Code (PIC)
+There is an offset between the text and data sections. The linker combines all the text and data sections from all the object files and therefor knows the sizes of these sections. So the linker can rewrite the instructions using offsets and the sizes of the sections.
+But x86 requires absolute addressing does it not?  
+If we need a relative address (relative to the current instruction pointer which there is no operation for) a way to get this is to use the `CALL some_label` like this:
+
+      call some_label
+    some_label: 
+      pop eax
+
+`call` causes the address of the next instruction to be saved on the stack and then it will jump to some_label. `pop eax` pops the address into eax which is now the value of the instruction pointer.
+
+
+PIC are implemented using Global Offset Table (GOT) which is a table of addresses in the .data section. When an instruction referres to a variable it does not use an absolute address (would require relocation) but instead referrs to an entry in the GOT which is located at a well known place in the data section. The entry in the GOT referrs to an absolut address.
+So this is a sort of relocation but in the data section instead of in the code section which is what was done for load-time relocation. But doing this in the data section, which is not shared and is writable does not cause any issues.
+Also relocations in the code section have to be done per variable reference and not per variable as is the case when using a GOT.
+
+So that covers variables but for function calls a Procedure Linkage Table (PLT) is used. This is part of the text section. Instead of calling a function directly a call is made to an entry in the PLT which performs the actual call. This is sometimes called `trampoline` which I've seen on occasions when inspecting/dumping in lldb but did not know what it meant. This allows for lazy resolution of functions calls.Also every PLT entry as an entry in the GOT.
+
+
+
+### Load-time relocation
+This process might take some during loading which might be an performance hit depending on the type of program being written.
+Since the text section needs to be modified during loading (needs to do the actual relocations) it is not possible to have it shared by multiple processes.
+
+
+### Instruction Pointer Relative addressing (RIP)
+References to code and data in x64 are done with instruction relative pointer addressing. So instructions can use references that are relative to the current instruction (or the next one) and don't require them to be absolut addresses. This works for offsets of up to 32bits but for programs that are larger than that this offset will not be enough. One could use absolute 64 bit addresses for everything but more instructions are required to perform simple operations and most programs will not require this.
+The solution is to introduce code models to cater for all needs. The compiler should be able to take an option where the programmer can say that this object file will not be lined into a large program. And also that this compilation unit will be included in a huge library and that 64-bit addressing should be used.
+
+In (64-bit mode), the encoding for the old 32-bit immediate offset addressing mode, is now a 32-bit offset 
+from the current RIP, not from 0x00000000 like before. 
+You only need to know how far away it is from the currently executing instruction (technically the next instruction)
+
+
+### Addressing modes
+
+
 #### Assemble 64Bit.s
 
     as -g -arch x86_64 64bit.s -o 64bit.o
