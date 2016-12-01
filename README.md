@@ -174,3 +174,115 @@ To list the current executable and its dependant images:
 You can dump the object file using:
 
     (lldb) target modules dump objfile /Users/danielbevenius/work/assembler/gas/out/cli
+
+## Linking and Loading
+Using `chmod +x` any file can be set to be an executable, but this only tells the kernel to
+read the file into memory and to look for a header to determine the executable format. This header
+is often referred to as `magic` which is a know digit identifying a certain type of executable format.
+
+Magic's:
+\x7FELF      Executable and Library Format. Native in Linux and UNIX though not supported by OS X
+#!           Script. The kernel looks for the string following #! and executes it as a command passing
+             the rest of the file to the process through stdin
+0xcafebabe   Multi-arch binaries for OS X only
+0xfeedface   OS X native binary format 32 bit
+0xfeedfacf   OS X native binary format 64 bit
+
+### Mach-Object Binaries
+Mach-Object (Mach-O) is a legacy of its NeXTSTEP origins. The header can be found in /usr/include/mach-o/loader.h
+
+    struct mach_header {
+        uint32_t        magic;          /* mach magic number identifier */
+        cpu_type_t      cputype;        /* cpu specifier */
+        cpu_subtype_t   cpusubtype;     /* machine specifier */
+        uint32_t        filetype;       /* type of file */
+        uint32_t        ncmds;          /* number of load commands */
+        uint32_t        sizeofcmds;     /* the size of all the load commands */
+        uint32_t        flags;          /* flags */
+    };
+
+    struct mach_header_64 {
+        uint32_t        magic;          /* mach magic number identifier */
+        cpu_type_t      cputype;        /* cpu specifier */
+        cpu_subtype_t   cpusubtype;     /* machine specifier */
+        uint32_t        filetype;       /* type of file */
+        uint32_t        ncmds;          /* number of load commands */
+        uint32_t        sizeofcmds;     /* the size of all the load commands */
+        uint32_t        flags;          /* flags */
+        uint32_t        reserved;       /* reserved */
+   };
+
+The two are in fact mostly identical besides the `reserved` field which is unused in mach_header_64.
+
+You can find the filetypes in the same header:
+    #define MH_OBJECT       0x1             /* relocatable object file */
+    #define MH_EXECUTE      0x2             /* demand paged executable file */
+    #define MH_FVMLIB       0x3             /* fixed VM shared library file */
+    #define MH_CORE         0x4             /* core file */
+    #define MH_PRELOAD      0x5             /* preloaded executable file */
+    #define MH_DYLIB        0x6             /* dynamically bound shared library */
+    #define MH_DYLINKER     0x7             /* dynamic link editor */
+    #define MH_BUNDLE       0x8             /* dynamically bound bundle file */
+    #define MH_DYLIB_STUB   0x9             /* shared library stub for static */
+                                        /*  linking only, no section contents */
+    #define MH_DSYM         0xa             /* companion file with only debug */
+                                        /*  sections */
+
+I think MH simply stands for Mach Header.
+
+You can inspect the header of a file using:
+
+    $ otool -hV out/loop
+    Mach header
+      magic        cputype  cpusubtype  caps    filetype ncmds sizeofcmds   flags
+      MH_MAGIC_64  X86_64   ALL         LIB64   EXECUTE     15       1200   NOUNDEFS DYLDLINK TWOLEVEL PIE
+
+Load commands:
+
+
+    $ otool -l out/loop
+
+
+The kernel is responsible for allocating virtual memory, creating the main thread, and code signing and 
+encryption. For dynamically linked executables the loading of libraries and the resolving of symbols
+is done in user mode by the LC_LOAD_DYLINKER command. 
+
+OS X uses .dylib wheras Linux uses .so for dynamic libraries.
+DYLD uses segments and in them sections.
+The dynamic linker is started by the kernel following an LC_DYLINKER load command:
+ 
+   $ otool -l out/loop
+   ...
+   Load command 7
+          cmd LC_LOAD_DYLINKER
+      cmdsize 32
+         name /usr/lib/dyld (offset 12)
+
+http://www.opensource.apple.com/source/dyld.
+
+    $ otool -tV out/loop
+    out/loop:
+    (__TEXT,__text) section
+    _main:
+    0000000100000f59    subq    $0x8, %rsp
+    0000000100000f5d    movabsq    $0x0, %r12
+    0000000100000f67    leaq    values(%rip), %r13
+    0000000100000f6e    movq    (%r13,%r12,4), %rsi
+    0000000100000f73    leaq    val(%rip), %rdi
+    0000000100000f7a    callq    0x100000f96 ## symbol stub for: _printf
+    0000000100000f7f    incq    %r12
+    0000000100000f82    cmpq    $0x5, %r12
+    0000000100000f86    jne    0x100000f6e
+    0000000100000f88    movl    $0x2000001, %eax
+    0000000100000f8d    movq    $0x0, %rdi
+    0000000100000f94    syscall 
+
+Now, notice the `callq` operation which is our call to `_printf`. The comment says that this is a symbol stub, so what are these?
+
+
+
+Make the linker trace SEGMENTS:
+    $ export DYLD_PRINT_SEGMENTS=1
+
+## Signals
+/usr/include/sys/signal.h
