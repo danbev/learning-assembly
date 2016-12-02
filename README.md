@@ -243,8 +243,39 @@ Load commands:
     $ otool -l out/loop
 
 
-The kernel is responsible for allocating virtual memory, creating the main thread, and code signing and 
-encryption. For dynamically linked executables the loading of libraries and the resolving of symbols
+The kernel is responsible for allocating virtual memory (LC_SEGMENT_64), creating the main thread, and code signing and encryption. 
+
+    Load command 1
+      cmd LC_SEGMENT_64
+      cmdsize 392
+      segname __TEXT
+      vmaddr 0x0000000100000000
+      vmsize 0x0000000000001000
+      fileoff 0
+      filesize 4096
+      maxprot 0x00000007
+      initprot 0x00000005
+      nsects 4
+      flags 0x0
+
+So this will load filesize 4096 from fileoff 0.
+
+Sections:
+__text                  main prog code
+__stubs, __stub_helper  subs used in dynamic linking
+
+
+LC_MAIN
+Replaces LC_UNIXTHREAD from Montain Lion onward and is responsible for starting the binaries
+main thread. For example, using `out/loop` once again:
+
+    Load command 11
+        cmd   LC_MAIN
+    cmdsize   24
+    entryoff  3929
+    stacksize 0
+
+For dynamically linked executables the loading of libraries and the resolving of symbols
 is done in user mode by the LC_LOAD_DYLINKER command. 
 
 OS X uses .dylib wheras Linux uses .so for dynamic libraries.
@@ -258,6 +289,8 @@ The dynamic linker is started by the kernel following an LC_DYLINKER load comman
       cmdsize 32
          name /usr/lib/dyld (offset 12)
 
+The dynamic linker is started by the kernel by following the LC_LOAD_DYLINKER load command.
+The default being dyld (dynamik link editor) and this is a user mode process.
 http://www.opensource.apple.com/source/dyld.
 
     $ otool -tV out/loop
@@ -278,11 +311,56 @@ http://www.opensource.apple.com/source/dyld.
     0000000100000f94    syscall 
 
 Now, notice the `callq` operation which is our call to `_printf`. The comment says that this is a symbol stub, so what are these?
+This is an external undefined symbol and the code is generated with a call to the symbol stub section.
+
+    $ dyldinfo -lazy_bind out/loop
+    lazy binding information (from lazy_bind part of dyld info):
+    segment section          address    index  dylib            symbol
+    __DATA  __la_symbol_ptr  0x100001010 0x0000 libSystem        _printf
+
+So lets take a look at the sections again and look at the __stubs section:
+
+    $ otool -l out/loop
+    Section
+      sectname __stubs
+       segname __TEXT
+          addr 0x0000000100000f96
+          size 0x0000000000000006
+        offset 3990
+         align 2^1 (2)
+        reloff 0
+        nreloc 0
+         flags 0x80000408
+     reserved1 0 (index into indirect symbol table)
+     reserved2 6 (size of stubs)
+
+And recall that the call to the stub looked like this:
+    0000000100000f7a    callq    0x100000f96 ## symbol stub for: _printf
+
+We can see that `addr` matched the address of the `callq` operation.
+
+    $ lldb out/loop
+    (lldb) breakpoint set --name main
+Now, we want to follow the code when we callq (the first time that is)
+
+
+
+Print the symbols of an object file:
+
+    $ nm -m out/loop
+    0000000100000000 (__TEXT,__text) [referenced dynamically] external __mh_execute_header
+    0000000100000f59 (__TEXT,__text) external _main
+                     (undefined) external _printf (from libSystem)
+                     (undefined) external dyld_stub_binder (from libSystem)
+    0000000100001018 (__DATA,__data) non-external val
+    0000000100001025 (__DATA,__data) non-external values
+
 
 
 
 Make the linker trace SEGMENTS:
     $ export DYLD_PRINT_SEGMENTS=1
+For more environment variables see `man ldld`.
 
 ## Signals
 /usr/include/sys/signal.h
