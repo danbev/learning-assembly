@@ -342,7 +342,18 @@ We can see that `addr` matched the address of the `callq` operation.
     $ lldb out/loop
     (lldb) breakpoint set --name main
 Now, we want to follow the code when we callq (the first time that is)
+dyld_stub_binder is called the first time and does the symbol binding
 
+
+    ->  0x100000f96 <+0>: jmpq   *0x74(%rip)               ; (void *)0x0000000100000fac
+        0x100000f9c:      leaq   0x65(%rip), %r11          ; (void *)0x0000000000000000
+        0x100000fa3:      pushq  %r11
+        0x100000fa5:      jmpq   *0x55(%rip)               ; (void *)0x00007fff8eca4148: dyld_stub_binder
+
+So we will be in libdyld.dylib`dyld_stub_binder
+
+There is a cache for dynamic libraries that can be found in:
+/private/var/db/dyld/
 
 
 Print the symbols of an object file:
