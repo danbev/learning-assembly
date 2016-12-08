@@ -1,7 +1,7 @@
 MACOSX := 10.11
 OUT := out
 
-PROGS := $(addprefix out/,cpuid.o cli.o loop.o)
+PROGS := $(addprefix out/,cpuid.o cli.o loop.o, 64bit.o)
 
 $(OUT)/%.o : %.s
 	as -W -arch x86_64 -o $@ $<

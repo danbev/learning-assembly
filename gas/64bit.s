@@ -3,20 +3,28 @@
 
 .data  
 msg:
- .ascii "Assembly x86_64!\n" 
+  .ascii "Assembly x86_64!\n" 
 len:
- .long . - msg  
+  .long . - msg  
 
 .text  
-.globl _start 
+.globl _main 
 
-_start:
- movq $0x2000004, %rax   # write call (see SYSCALL_CONSTRUCT_UNIX). 
- movq $1, %rdi   # file descriptior (stdout). rdi is used for the first argument to functions in x86_64
- movq msg@GOTPCREL(%rip), %rsi # string to print. rsi is used for the second argument to functions in x86_64
- movq len(%rip), %rdx  # length of string. rdx is used for the third argument to functions in x86_64
- syscall    # call write
+_main:
+  # write call (SYSCALL_CONSTRUCT_UNIX in /usr/include/sys/syscall.h).
+  movq $0x2000004, %rax   
+  # file descriptior (stdout). rdi is used for the first argument to functions
+  movq $1, %rdi   
+  # string to print. rsi is used for the second argument to functions in x86_64
+  movq msg@GOTPCREL(%rip), %rsi 
+  # length of string. rdx is used for the third argument to functions in x86_64
+  movq len(%rip), %rdx  
+  # call write
+  syscall    
 
- movq $0x2000001, %rax  # exit call
- movq $0, %rdi   # return code
- syscall    # call exit
+  # exit call
+  movq $0x2000001, %rax  
+  # return code
+  movq $0, %rdi   
+  # call exit
+  syscall    
