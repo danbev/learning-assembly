@@ -2,11 +2,11 @@
 .globl _main
 
 _main:
-   jmp overhere
-   mov $0x2000001, %eax
-   mov $0, %rdi
-   syscall
+  jmp overhere
+  mov $0x2000001, %eax
+  mov $0, %rdi
+  syscall
 overhere:
-   mov $0x2000001, %eax
-   mov $2, %rdi
-   syscall
+  mov $0x2000001, %eax
+  mov $2, %rdi
+  syscall
