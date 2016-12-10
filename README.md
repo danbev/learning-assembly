@@ -310,7 +310,7 @@ http://www.opensource.apple.com/source/dyld.
     0000000100000f8d    movq    $0x0, %rdi
     0000000100000f94    syscall 
 
-Now, notice the `callq` operation which is our call to `_printf`. The comment says that this is a symbol stub, so what are these?
+Now, notice the `callq` operation which is our call to `_printf`. The comment says that this is a symbol stub, so what are these?  
 This is an external undefined symbol and the code is generated with a call to the symbol stub section.
 
     $ dyldinfo -lazy_bind out/loop
@@ -373,5 +373,16 @@ Make the linker trace SEGMENTS:
     $ export DYLD_PRINT_SEGMENTS=1
 For more environment variables see `man ldld`.
 
+
 ## Signals
 /usr/include/sys/signal.h
+
+
+## Break point using address
+
+    (lldb) breakpoint set --addresu 0x100000f47
+
+## Displaying the stack
+The equivalent of `x/20x $rsp` would be:
+
+    (lldb) memory read --count 20 --size 4 --format x $rsp
