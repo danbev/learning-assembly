@@ -377,6 +377,11 @@ For more environment variables see `man ldld`.
 ## Signals
 /usr/include/sys/signal.h
 
+## Show info about a raw address
+
+    (lldb) image lookup --address 0x100000f78
+      Address: overflow[0x0000000100000f78] (overflow.__TEXT.__stubs + 12)
+      Summary: overflow`symbol stub for: printf
 
 ## Break point using address
 
@@ -386,3 +391,14 @@ For more environment variables see `man ldld`.
 The equivalent of `x/20x $rsp` would be:
 
     (lldb) memory read --count 20 --size 4 --format x $rsp
+
+
+## printf
+Print with zero padding instead of blank
+
+    $ printf "%010x" 3
+    0000000003$
+
+The first zero after the procent sign is the padding which can either be 0 or 
+if left out blank padding will be added. 10 is the number of the padding and
+x is for signed hexadecimal. 
