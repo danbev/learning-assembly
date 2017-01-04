@@ -175,6 +175,10 @@ You can dump the object file using:
 
     (lldb) target modules dump objfile /Users/danielbevenius/work/assembler/gas/out/cli
 
+You can show the sections using:
+
+   (lldb) image dump sections
+
 ## Linking and Loading
 Using `chmod +x` any file can be set to be an executable, but this only tells the kernel to
 read the file into memory and to look for a header to determine the executable format. This header
