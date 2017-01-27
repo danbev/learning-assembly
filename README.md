@@ -219,6 +219,7 @@ Mach-Object (Mach-O) is a legacy of its NeXTSTEP origins. The header can be foun
 The two are in fact mostly identical besides the `reserved` field which is unused in mach_header_64.
 
 You can find the filetypes in the same header:
+
     #define MH_OBJECT       0x1             /* relocatable object file */
     #define MH_EXECUTE      0x2             /* demand paged executable file */
     #define MH_FVMLIB       0x3             /* fixed VM shared library file */
