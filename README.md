@@ -186,7 +186,7 @@ is often referred to as `magic` which is a know digit identifying a certain type
 
 Magic's:  
 \x7FELF      Executable and Library Format. Native in Linux and UNIX though not supported by OS X  
-#!           Script. The kernel looks for the string following #! and executes it as a command passing  
+\#!           Script. The kernel looks for the string following #! and executes it as a command passing  
              the rest of the file to the process through stdin  
 0xcafebabe   Multi-arch binaries for OS X only  
 0xfeedface   OS X native binary format 32 bit  
