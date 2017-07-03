@@ -1,5 +1,5 @@
 ## Assembler
-The project only contains small programs to help me learn assembler.
+This project only contains small programs to help me learn assembler.
 
 [gas](./gas) Contains examples using the GNU Assembler.  
 [nasm](./nasm) Contains examples using the Netwide Assembler.  
@@ -116,7 +116,7 @@ When you start a program in `lldb` you can take a look at the stack pointer memo
 What I'm trying to figure out is where `argc` might be. We can see that `0x7fff5fbfeba8` has `2` which matches our two parameters (the program name and the argument).
 What I was missing was that when using a C runtime argc is passed in rdi and not on the stack. I was looking for the value on the stack which.
 
-### Compare while(flat) to while(flag == true)
+### Compare while(flag) to while(flag == true)
 (while flag == true) :
 
     while`main:
