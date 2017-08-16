@@ -6,25 +6,25 @@ This project only contains small programs to help me learn assembler.
 [c](./c) C programs used for viewing the generated assembler code.  
 
 ### Registers
-rax     caller saved.
-rbx     caller saved.
+rax     caller saved.  
+rbx     caller saved.  
 
-rdi     callee saved. Used to pass 1st argument to functions
-rsi     caller saved. Used to pass 2nd argument to functions
-rdx     caller saved. Used to pass 3rd argument to functions
-rcx     caller saved. Used to pass 4th argument to functions
-r8      caller saved. Used to pass 5th argument to functions
-r9      caller saved. Used to pass 6th argument to functions
+rdi     callee saved. Used to pass 1st argument to functions  
+rsi     caller saved. Used to pass 2nd argument to functions  
+rdx     caller saved. Used to pass 3rd argument to functions  
+rcx     caller saved. Used to pass 4th argument to functions  
+r8      caller saved. Used to pass 5th argument to functions  
+r9      caller saved. Used to pass 6th argument to functions  
 
-rbp     caller saved. The stack base pointer
-rsp     caller saved. The stack pointer
+rbp     caller saved. The stack base pointer  
+rsp     caller saved. The stack pointer  
 
-r10     caller saved
-r11     caller saved 
-r12     callee saved 
-r13     callee saved
-r14     callee saved 
-r15     callee saved
+r10     caller saved  
+r11     caller saved   
+r12     callee saved   
+r13     callee saved  
+r14     callee saved   
+r15     callee saved  
 
 #### Caller saved
 These registers might be changed when making function calls and it is the callers responsibility to save them.
