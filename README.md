@@ -29,6 +29,17 @@ These registers might be changed when making function calls and it is the caller
 #### Callee saved
 These registers are preserved/saved accross function calls.
 
+### Instructions
+When you see a `q` appended to an instruction that indicated a full quadword (64bits), an `l` means a longword (only 32bits).
+
+### REX prefix
+You may come across instructions using a REX prefix which are necessary if an instruction references on of the
+extended registers or uses a 64-bit operand. It is ignored if used where it does not have any meaning.
+For example:
+
+    REX.W addq rsp,0x38
+
+
 
 ### The Stack
 The stack consists of memory locations reserved at the end of the memory area allocated to the program. 
