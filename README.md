@@ -6,22 +6,26 @@ This project only contains small programs to help me learn assembler.
 [c](./c) C programs used for viewing the generated assembler code.  
 
 ### Registers
-* rax     caller saved.  
-* rbx     caller saved.  
-* rdi     callee saved. Used to pass 1st argument to functions  
-* rsi     caller saved. Used to pass 2nd argument to functions  
-* rdx     caller saved. Used to pass 3rd argument to functions  
-* rcx     caller saved. Used to pass 4th argument to functions  
+* rax     Accumlator register. Caller saved.  
+* rbx     Base register. Caller saved.  
+* rdi     Destination Index pointer. Callee saved. Used to pass 1st argument to functions  
+* rsi     Source Index pointer. Caller saved. Used to pass 2nd argument to functions  
+* rdx     Data register. Caller saved. Used to pass 3rd argument to functions  
+* rcx     Counter register. Caller saved. Used to pass 4th argument to functions  
 * r8      caller saved. Used to pass 5th argument to functions  
 * r9      caller saved. Used to pass 6th argument to functions  
-* rbp     caller saved. The stack base pointer  
-* rsp     caller saved. The stack pointer  
+* rbp     Stack Base pointer. Caller saved.
+* rsp     Stack pointer. Caller saved.
 * r10     caller saved  
 * r11     caller saved   
 * r12     callee saved   
 * r13     callee saved  
 * r14     callee saved   
 * r15     callee saved  
+
+ax  = 16-bit mode
+eax = 32-bit mode
+rax = 64-bit mode
 
 #### Caller saved
 These registers might be changed when making function calls and it is the callers responsibility to save them.
@@ -30,38 +34,116 @@ These registers might be changed when making function calls and it is the caller
 These registers are preserved/saved accross function calls.
 
 ### Instructions
+Just to make sure that you are clear on this is that instructions are stored in memory and the processor runs by reading these
+instructions. Any data required by the instructions is also read/stored from memory. To keep these sepaarate there are two pointers
+to help, the instruction pointer, and the data pointer.
+
+`instruction pointer` is used to keep track of the instructions already executed and the next instruction. Instructions can alter
+this indirectly by jumping which causes this pointer to move.
+
+`data pointer` is used to keep track of where the data in memory starts. This is what is referred to as the stack. When you push
+a new data element onto this stack the pointer moves down in memory.
+ 
+Each processor family has its own predefined opcodes that define all of the functions available.
+
 When you see a `q` appended to an instruction that indicated a full quadword (64bits), an `l` means a longword (only 32bits).
 
+#### Intel Instruction format
+
+    Instruction Prefix    Opcode       ModR/M      SIB         Displacement  Data elements
+    0-4 bytes             1-3 bytes    0-1 bytes   0-1 bytes   0-4 bytes     0-4 bytes
+
+Opcode is the only required part.
+
+##### Instruction Prefixes
+* Lock and repeat
+Indicates that any shared memory areas will be used exclusively by the instruction (multiprocessor systems)
+* Segment override and branch hint
+Segement overrides defines that instructions can override defined segment registers.
+The branch hint attempt to give the processor a clue as to the most likely path the program will take in a conditional jump statement.
+* Operand size override
+The operand size override prefix informs the processor that the program will switch between 16-bit and 32-bit operand sizes within the instruction code. 
+This enables the program to warn the processor when it uses larger-sized operands, helping to speed up the assignment of data to register
+* Address size
+The address size override prefix informs the processor that the program will switch between 16-bit and 32-bit memory addresses.
+
+
+##### Modifiers
+* ModeR/M 
+This byte tells the processor which registers or memory locations to use as the instruction's operands
+
+7     6 5    3 2     0
++------+------+------+
+| mod  | reg2 | reg1 |
++------+------+------+
+
+Both the reg1 and reg2 fields take three-bit register codes, indicating which registers to use as the instruction's operands. 
+By default, reg1 is the source operand and reg2 is the destination. 
+Mod field
+00          [reg1]       operand's address is in register reg1
+01          [reg1+byte]  operand's memory address is reg1 plus a byte-sized displacement
+10          [reg1+word]  operand's memory address is reg1 plus a word-sized displacement
+11          reg1         operand is reg1
+
+* SIB (Scale*Index+Base)
+Only available in 32-bit mode.
+
+
 ### REX prefix
-You may come across instructions using a REX prefix which are necessary if an instruction references on of the
+You may come across instructions using a REX prefix which are necessary if an instruction references one of the
 extended registers or uses a 64-bit operand. It is ignored if used where it does not have any meaning.
+
 For example:
 
     REX.W addq rsp,0x38
 
-
+#### Assembly Instruction format
 
 ### The Stack
-The stack consists of memory locations reserved at the end of the memory area allocated to the program. 
-The ESP register is used to point to the top of the stack in memory.
-When PUSH is used it places data on the bottom of this memory area and decreases the ESP (stack pointer).
+The stack consists of memory area for parameters, local variables, and the return address (sometimes return values depending
+on the calling conventions which might dictate that return values be passed in registers.
 
-When POP is used it moves data to a register or a memory location and increases the ESP.
+When a process is started the stack is allocated with a fixed size in virtual memory by the OS. The area is released when
+the process terminates. Each thread as its own stack.
+
 
 When a c-style function call is made it places the required arguments on the stack and the call
 instruction places the return address onto the stack aswell.
 
-        param2           8(%esp)
-        param1           4(%esp)
-        return address <- (%esp)
+The Stack Pointer register is used to point to the top of the stack in memory. 
 
-So ESP points to the top of the stack where the return address is. If we used the POP instruction to get the
-parameters as the return address might be lost in the process. This can be avoided using indirect addressing, 
-as in using 4(%esp) to access the parameters and avoid ESP to be incremented. But what if the function itself
-needs to push data onto the stack, this would also change the value of ESP and it would throw off the indirect
+    p2           8(%esp)
+    p1           4(%esp)
+    return address <- (%esp)
+
+     88                  92                  96                  100
+     +-----------------------------------------------------------+
+     | rt | rt | rt | rt | p1 | p1 | p1 | p1 | p2 | p2 | p2 | p2 |
+     +-----------------------------------------------------------+
+    /\   
+    ESP
+
+When PUSH is used it places data on the bottom of this memory area and decreases the stack pointer.
+
+     84                 88                   92                  96                   100
+     +--------------------------------------------------------------------------------+
+     | v1 | v1 | v1 | v1 | rt | rt | rt | rt | p1 | p1 | p1 | p1 | p2 | p2 | p2 | p2  |
+     +--------------------------------------------------------------------------------+
+    /\   
+    ESP
+
+Notice that the value or SP went from 88 to 84 (-4).
+
+When POP is used it moves data to a register or a memory location and increases the stack pointer.
+
+So SP points to the top of the stack where the return address is. If we used the POP instruction to get the
+parameters to the function, the return address might be lost in the process. This can be avoided using indirect addressing, 
+as in using 4(%esp) to access the parameters and avoid ESP to be incremented. 
+
+But what if the function itself needs to push data onto the stack, this would also change the value of ESP and it would throw off the indirect
 addressing. Instead what is common practice is to store the current value of ESP (which is pointing to the 
-return address) in EBP. Then use indirect addressing with EBP which will no change if the PUSH/POP instructions
-are used. The calling function might also be using the EBP for the same reason so we first PUSH that value
+return address) in EBP. Then use indirect addressing with EBP which will not change if the PUSH/POP instructions
+are used. The calling (the callee) function might also be using the EBP for the same reason, so we first PUSH that value
 onto the stack, decreasing the ESP. So the value of EBP is first pushed onto the stack and then we store
 the current ESP value in EBP to enable indirect addressing.
 
@@ -82,7 +164,8 @@ the current ESP value in EBP to enable indirect addressing.
 Resetting the ESP register value ensures that any data placed on the stack within the function but not 
 cleaned off will be discarded when execution returns to the main program (otherwise, the RET instruction could return to the wrong memory location).
 
-Now, since we are using EBP we can place additional data on the stack without affecting how input parameters values are accessed. We can used EBP with indirect addressing to create local variables:
+Now, since we are using EBP we can place additional data on the stack without affecting how input parameters values are accessed. 
+We can used EBP with indirect addressing to create local variables:
 
           param2            12(%esp)
           param1            8(%esp)
@@ -104,7 +187,7 @@ case.
    
 
 Also, when the function returns the parameters are still on the stack which might not be expected
-but the calling function. What you should do it reset the stack to the state before the call, when
+but the calling function. What you should do is reset the stack to the state before the call, when
 there were now parameters on the stack. You can do this by adding 4,8,12 (what ever the size and number
 of parameters are).
 
@@ -112,17 +195,20 @@ of parameters are).
 When you start a program in `lldb` you can take a look at the stack pointer memory location using:
 
     $ lldb ./out/cli 10 20
-    (lldb) breakpoint set  --file cli.s --line 9
-    (lldb) run
+    (lldb) br s  -f cli.s -l 9
+    (lldb) r
     (lldb) register read rsp
      rsp = 0x00007fff5fbfeb98
 
     (lldb) memory read --size 4 --format x 0x00007fff5fbfeb98
-0x7fff5fbfeb98: 0x850125ad 0x00007fff 0x850125ad 0x00007fff
-0x7fff5fbfeba8: 0x00000000 0x00000000 0x00000002 0x00000000
+    0x7fff5fbfeb98: 0x850125ad 0x00007fff 0x850125ad 0x00007fff
+    0x7fff5fbfeba8: 0x00000000 0x00000000 0x00000002 0x00000000
 
 What I'm trying to figure out is where `argc` might be. We can see that `0x7fff5fbfeba8` has `2` which matches our two parameters (the program name and the argument).
-What I was missing was that when using a C runtime argc is passed in rdi and not on the stack. I was looking for the value on the stack which.
+What I was missing was that when using a C runtime argc is passed in rdi and not on the stack: 
+
+    (lldb) register read edi
+     edi = 0x00000003
 
 ### Compare while(flag) to while(flag == true)
 (while flag == true) :

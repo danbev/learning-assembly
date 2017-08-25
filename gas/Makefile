@@ -4,7 +4,7 @@ OUT := out
 PROGS := $(addprefix out/,cpuid.o cli.o loop.o, 64bit.o)
 
 $(OUT)/%.o : %.s
-	as -W -arch x86_64 -o $@ $<
+	as -g -W -arch x86_64 -o $@ $<
 	ld -e _main -macosx_version_min $(MACOSX) -lc -lSystem -arch x86_64 $@ -o $(OUT)/$*
 
 all: $(PROGS)
