@@ -14,8 +14,6 @@ When using `as` you can specify the architecture type using `-arch`
 
 If no target architecture is specified, it defaults to the architecture of the host it is running on.
 
-
-
 ### Segments
 In Mach-O sections are segments that contains sections, for example:
 
@@ -28,6 +26,12 @@ In Mach-O sections are segments that contains sections, for example:
 This is done using the `syscall` instruction.
 
 /usr/include/sys/syscall.h
+
+
+### Pointers
+When using parenthises around a register, for example (%eax) means to dereference the pointer in eax and use it.
+To get the address of a label you can use $ before the label. If you are on a 64 bit machine you may have to load the
+effective address instead (leaq label(%rip), %rdi) if direct addressing is not supported.
 
 ### learning_i386
 Just a hello world example that prints something to standard out.
@@ -67,51 +71,106 @@ The next thing that I did not understand was this line:
 
     movq msg@GOTPCREL(%rip), %rsi # string to print. rsi is used for the second argument to functions in x86_64
 
-GOTPCEL is short for Global Offset Table and Procedure Linkage Table (I think). From what I understand this has to do with relocations. So lets look
-what relocation information can be found in the mach object file:
+### Relocations
+If you have multiple object files and want to link them together one options is to add the code sections together, then the 
+data sections etc. But if you have a function at address 0 in both object files which one will get invoked? It would depend on 
+which was linked first as the other would have it's address shifted.
 
-    $ otool -r 64bit.o
-    64bit.o:
-    Relocation information (__TEXT,__text) 2 entries
-    address  pcrel length extern type    scattered symbolnum/value
-    00000018 1     2      1      1       0         1
-    00000011 1     2      1      3       0         0
-    Relocation information (__DATA,__data) 2 entries
-    address  pcrel length extern type    scattered symbolnum/value
-    00000011 0     2      1      5       0         0
-    00000011 0     2      1      0       0         1
-    Relocation information (__DWARF,__debug_line) 3 entries
-    address  pcrel length extern type    scattered symbolnum/value
-    0000002b 0     3      0      0       0         1
-    00000006 0     2      0      5       0         3
-    00000006 0     2      0      0       0         3
-    Relocation information (__DWARF,__debug_info) 4 entries
-    address  pcrel length extern type    scattered symbolnum/value
-    000000a4 0     3      0      0       0         1
-    0000009c 0     3      0      0       0         1
-    00000018 0     3      0      0       0         1
-    00000010 0     3      0      0       0         1
-    Relocation information (__DWARF,__debug_aranges) 1 entries
-    address  pcrel length extern type    scattered symbolnum/value
-    00000010 0     3      0      0       0         1
+* When you load/store data you need to know the location.
+* When you branch/jump you need to be able to specify the location to branch/jump to.
 
+Lets take a look at the following c program:
+
+    extern int something;
+
+    int function(void) {
+      return something;
+    }
+
+Next, we can compile and then display the relocation section:
+
+    $ clang -c rel.c
+    $ otool -r rel.o
+    RELOCATION RECORDS FOR [__text]:
+    0000000000000007 X86_64_RELOC_GOT_LOAD _something@GOTPCREL
+
+    RELOCATION RECORDS FOR [__compact_unwind]:
+    0000000000000000 X86_64_RELOC_UNSIGNED __text
+
+You can find information about [X86_64_RELOC_GOT_LOAD](https://opensource.apple.com/source/xnu/xnu-1699.22.73/EXTERNAL_HEADERS/mach-o/x86_64/reloc.h.auto.html).
+During compilation _something is not known to the compiler so a relocation entry is left for the linker to resolve. The entry is specified as addredss `0000000000000007'
+
+    $ objdump -disassemble rel.o
+
+    rel.o:file format Mach-O 64-bit x86-64
+
+    Disassembly of section __TEXT,__text:
+    _function:
+       0: 55                      pushq%rbp
+       1: 48 89 e5                movq%rsp, %rbp
+       4: 48 8b 05 00 00 00 00    movq(%rip), %rax
+       b: 8b 00                   movl(%rax), %eax
+       d: 5d                      popq%rbp
+       e: c3                      retq
+
+If we look at address 7:
+
+       4: 48 8b 05 00 00 00 00    movq(%rip), %rax
+                   /\
+
+We can see that at address 7 there are four bytes that will be filled by the linker with the correct address.
+
+
+GOTPCEL is short for Global Offset Table and Procedure Linkage Table (I think). From what I understand this has to do with relocations. So lets look what relocation information can be found in the mach object file:
+
+    $ otool -r out/64bit.o
+    $ otool -r out/cli.o
+    RELOCATION RECORDS FOR [__text]:
+    000000000000000f X86_64_RELOC_BRANCH _printf
+    000000000000000a X86_64_RELOC_GOT_LOAD argc@GOTPCREL
+
+    RELOCATION RECORDS FOR [__debug_info]:
+    000000000000008b X86_64_RELOC_UNSIGNED __text
+    0000000000000018 X86_64_RELOC_UNSIGNED __text
+    0000000000000010 X86_64_RELOC_UNSIGNED __text
+
+    RELOCATION RECORDS FOR [__debug_aranges]:
+    0000000000000010 X86_64_RELOC_UNSIGNED __text
+
+    RELOCATION RECORDS FOR [__debug_line]:
+    0000000000000029 X86_64_RELOC_UNSIGNED __text
+
+Relocation is the process of connecting symbolic referenses to symbolic definitions. For the _text segement we can find the following:
+
+    000000000000000a X86_64_RELOC_GOT_LOAD argc@GOTPCREL
+
+This maps to [cli.s](./cli.s):
+
+    movq argc@GOTPCREL(%rip), %rdi
+
+Recall that RIP is the instruction pointer
+    
 ### Instruction Pointer Relative addressing (RIP)
-RIP addressing is a mode where an address references are provided as a 32-bit displacements from the current instruction pointer. 
-One of the advantages os RIP is that is makes it easier to generate PIC, which is code that is not dependent upon where the code
-is loaded. This is important for shared objects as they don't know where they will be loaded. 
-In x64 references to code and data are done using instruction pointer relative (RIP) addressing modes.
+RIP addressing is a mode where address references are provided as a 32-bit displacements from the current instruction pointer (RIP register value). 
+One of the advantages of RIP is that is makes it easier to generate Position Independant Code, which is code that is not dependent upon where the 
+code is loaded. This is important for shared objects as they don't know where they will be loaded. 
+In x64, references to code and data are done using instruction pointer relative (RIP) addressing modes.
 
 ### Position Independant Code (PIC)
 When the linker creates a shared library it does not know where in the process's address space it might be loaded. This causes a problem for code and data references which need to point to the correct memory locations.
 
 My view of this is that when the linker takes multiple object files and merges the sections, like .text, .data etc, merge might not be a good
 description but rather adds them sequentially to the resulting object file. If the source files refer to absolut
-locations in it's .data section these might not be in the same place after linking ito the resulting object file.
+locations in it's .data section these might not be in the same place after linking into the resulting object file.
 Solving this problem can be done using position independant code (PIC) or load-time relocation.
 
 There is an offset between the text and data sections. The linker combines all the text and data sections from all the object files and therefore knows the sizes of these sections. So the linker can rewrite the instructions using offsets and the sizes of the sections.
 
 But x86 requires absolute addressing does it not?  
+You might come accross the following compilation error using as on Mac:
+
+    32-bit absolute addressing is not supported in 64-bit mode
+
 If we need a relative address (relative to the current instruction pointer which there is no operation for) a way to get this is to use the `CALL some_label` like this:
 
       call some_label
@@ -131,12 +190,12 @@ Only position independent code is supposed to be included into shared objects (S
 location in RAM.
 
 ### Load-time relocation
-This process might take some during loading which might be an performance hit depending on the type of program being written.
+This process might take some time during loading which might be a performance hit depending on the type of program being written.
 Since the text section needs to be modified during loading (needs to do the actual relocations) it is not possible to have it shared by multiple processes.
 
 ### Instruction Pointer Relative addressing (RIP)
 References to code and data in x64 are done with instruction relative pointer addressing. So instructions can use references that are relative to the current instruction (or the next one) and don't require them to be absolute addresses. This works for offsets of up to 32bits but for programs that are larger than that this offset will not be enough. One could use absolute 64 bit addresses for everything but more instructions are required to perform simple operations and most programs will not require this.
-The solution is to introduce code models to cater for all needs. The compiler should be able to take an option where the programmer can say that this object file will not be lined into a large program. And also that this compilation unit will be included in a huge library and that 64-bit addressing should be used.
+The solution is to introduce code models to cater for all needs. The compiler should be able to take an option where the programmer can say that this object file will not be linked into a large program. And also that this compilation unit will be included in a huge library and that 64-bit addressing should be used.
 
 In (64-bit mode), the encoding for the old 32-bit immediate offset addressing mode, is now a 32-bit offset 
 from the current RIP, not from 0x00000000 like before. 
@@ -166,12 +225,65 @@ The magic number can be found in ```/usr/include/mach-o/loader.h```:
 The ```cputype``` can be located in ```/usr/include/mach/machine.h```:
 
     
-
-
 ### otool
 Dump sections:
 
     $ otool -s __TEXT __text jump.o
     $ otool -s __DATA __data jump.o
     
+
+### Redzone
+Put simply, the red zone is an optimization. Code can assume that the 128 bytes below rsp will not be asynchronously clobbered 
+by signals or interrupt handlers, and thus can use it for scratch data, without explicitly moving the stack pointer. The last 
+sentence is where the optimization lays - decrementing rspand restoring it are two instructions that can be saved when using 
+the red zone for data.
+
+However, keep in mind that the red zone will be clobbered by function calls, so it's usually most useful in leaf functions 
+(functions that call no other functions)
+
+Preserving the base pointer
+The base pointer rbp (and its predecessor ebp on x86), being a stable "anchor" to the beginning of the stack frame throughout
+the execution of a function, is very convenient for manual assembly coding and for debugging [5]. However, some time ago it 
+was noticed that compiler-generated code doesn't really need it (the compiler can easily keep track of offsets from rsp), 
+and the DWARF debugging format provides means (CFI) to access stack frames without the base pointer.
+
+This is why some compilers started omitting the base pointer for aggressive optimizations, thus shortening the function prologue 
+and epilogue, and providing an additional register for general-purpose use (which, recall, is quite useful on x86 with its 
+limited set of GPRs).
+
+gcc keeps the base pointer by default on x86, but allows the optimization with the -fomit-frame-pointer compilation flag. 
+How recommended it is to use this flag is a debated issue - you may do some googling if this interests you.
+
+Anyhow, one other "novelty" the AMD64 ABI introduced is making the base pointer explicitly optional, stating:
+
+The conventional use of %rbp as a frame pointer for the stack frame may be avoided by using %rsp (the stack pointer) to index into 
+the stack frame. This technique saves two instructions in the prologue and epilogue and makes one additional general-purpose 
+register (%rbp) available.
+gcc adheres to this recommendation and by default omits the frame pointer on x64, when compiling with optimizations. It gives an 
+option to preserve it by providing the -fno-omit-frame-pointer flag. For clarity's sake, the stack frames showed above were 
+produced without omitting the frame pointer.
+
+
+### Setting register to zero
+My first thought would be using a mov instruction, like `movq $0, rax' for example.
+
+You might come a cross something like the following:
+
+    xorl  %eax, %eax
+
+Which simply a way of setting the register to zero. The xorl instruction uses fewer bytes than the mov. I found suggestions that it 
+migth be more performat that using mov $0, %eax
+
+    100000f72:48 c7 c0 00 00 00 00 movq $0, %rax
+
+    100000f79:48 31 c0             xorq %rax, %rax
+
+Notice that the byte code for xorg are smaller than movq.
+Reducing instruction sizes will reduce instruction-cache misses, and therefore improve performance.
+
+### System calls
+You can use dtruss to see what system call are being done:
+
+    $ sudo dtruss `pwd`/malloc
+
 
