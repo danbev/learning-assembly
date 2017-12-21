@@ -106,11 +106,10 @@ on the calling conventions which might dictate that return values be passed in r
 When a process is started the stack is allocated with a fixed size in virtual memory by the OS. The area is released when
 the process terminates. Each thread as its own stack.
 
-
-When a c-style function call is made it places the required arguments on the stack and the call
+When a c-style function call is made it places the required arguments on the stack and the `call`
 instruction places the return address onto the stack aswell.
 
-The Stack Pointer register is used to point to the top of the stack in memory. 
+The Stack Pointer register (rsp) is used to point to the top of the stack in memory. 
 
     p2           8(%esp)
     p1           4(%esp)
@@ -549,3 +548,122 @@ The solution is to introduce code models to cater for all needs. The compiler sh
 In (64-bit mode), the encoding for the old 32-bit immediate offset addressing mode, is now a 32-bit offset 
 from the current RIP, not from 0x00000000 like before. 
 You only need to know how far away it is from the currently executing instruction (technically the next instruction)
+
+
+### func.c
+```c++
+int doit() {
+  return 22;
+}
+
+int main(int argc, char** argv) {
+  int i = doit();
+}
+```
+
+    $ clang -g -o func func.c
+    $ lldb func
+    (lldb) br s -n main
+    (lldb) dis
+
+```console
+(lldb) dis
+func`main:
+    0x100000f90 <+0>:  pushq  %rbp
+    0x100000f91 <+1>:  movq   %rsp, %rbp
+    0x100000f94 <+4>:  subq   $0x20, %rsp
+    0x100000f98 <+8>:  movl   %edi, -0x4(%rbp)
+    0x100000f9b <+11>: movq   %rsi, -0x10(%rbp)
+->  0x100000f9f <+15>: callq  0x100000f80               ; doit at func.c:2
+    0x100000fa4 <+20>: xorl   %edi, %edi
+    0x100000fa6 <+22>: movl   %eax, -0x14(%rbp)
+    0x100000fa9 <+25>: movl   %edi, %eax
+    0x100000fab <+27>: addq   $0x20, %rsp
+    0x100000faf <+31>: popq   %rbp
+    0x100000fb0 <+32>: retq
+```
+First thing to notice is the operations that are performed before we come to the
+call to `doit`.
+
+```console
+    0x100000f90 <+0>:  pushq  %rbp
+    0x100000f91 <+1>:  movq   %rsp, %rbp
+```
+This is preserving the old value of rbp and moving the current value of 
+rsp into rbp so that we can use rbp as an offset which will not be affected by push/pop
+operation on the stach which increment rsp.
+
+```console
+    0x100000f94 <+4>:  subq   $0x20, %rsp
+```
+This is making room for variables on the stack by subtracting 20 from rsp.
+
+    0x100000f98 <+8>:  movl   %edi, -0x4(%rbp)
+    0x100000f9b <+11>: movq   %rsi, -0x10(%rbp)
+
+These are storing the arguments to main on the stack:
+
+    (lldb) memory read --size 4 -format x --count 1 `$rbp - 4`
+    0x7fff5fbfee9c: 0x00000001
+
+
+### Read a pointer to pointer as c-string
+Lets say you want to find the first value of argv. You can do this by inspecting the value in rsi:
+
+    (lldb) register read $rsi
+     rsi = 0x00007fff5fbfeec0
+
+We know that this is a pointer to a pointer so we want to read the memory address contained in `0x00007fff5fbfeec0`:
+
+    (lldb) memory read -f p -c 1 0x00007fff5fbfeec0
+     0x7fff5fbfeec0: 0x00007fff5fbff130
+
+Notice the usage of `-f p` which is to format ass a pointer. Next, we can use that address and the `-f s` to 
+print the c-string:
+
+    (lldb) memory read -f s -c 1 0x00007fff5fbff130
+      0x7fff5fbff130: "/Users/danielbevenius/work/assembler/c/func"
+
+
+### memory read format values
+The following are the supported values for the -f <format> argument: 
+```console
+'B' or "boolean"
+'b' or "binary"
+'y' or "bytes"
+'Y' or "bytes with ASCII"
+'c' or "character"
+'C' or "printable character"
+'F' or "complex float"
+'s' or "c-string"
+'d' or "decimal"
+'E' or "enumeration"
+'x' or "hex"
+'X' or "uppercase hex"
+'f' or "float"
+'o' or "octal"
+'O' or "OSType"
+'U' or "unicode16"
+"unicode32"
+'u' or "unsigned decimal"
+'p' or "pointer"
+"char[]"
+"int8_t[]"
+"uint8_t[]"
+"int16_t[]"
+"uint16_t[]"
+"int32_t[]"
+"uint32_t[]"
+"int64_t[]"
+"uint64_t[]"
+"float16[]"
+"float32[]"
+"float64[]"
+"uint128_t[]"
+'I' or "complex integer"
+'a' or "character array"
+'A' or "address"
+"hex float"
+'i' or "instruction"
+'v' or "void"
+```
