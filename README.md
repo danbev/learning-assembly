@@ -106,9 +106,218 @@ on the calling conventions which might dictate that return values be passed in r
 When a process is started the stack is allocated with a fixed size in virtual memory by the OS. The area is released when
 the process terminates. Each thread as its own stack.
 
+The memory location for the stack is set aside when the program starts. Notice that
+this is a continous memory area but still just memory. It is special since there is
+a register that points to the top of the stack and there are operations that increment
+the stack pointer regiser (rsp). 
+It is important to remember this as getting something off the stack still requires
+a memory read (since this is a continous memory it should be in the cache) and then
+storing that in a register to use.
+
 When a c-style function call is made it places the required arguments on the stack and the `call`
 instruction places the return address onto the stack aswell.
 
+```c
+int doit(int i) {
+  return i;
+}
+
+int main(int argc, char** argv) {
+  int i = doit(6);
+}
+```
+
+```console
+(lldb) br s -a 0x100000f90
+(lldb) r
+(lldb) dis
+func`doit:
+    0x100000f80 <+0>:  pushq  %rbp
+    0x100000f81 <+1>:  movq   %rsp, %rbp
+    0x100000f84 <+4>:  movl   %edi, -0x4(%rbp)
+    0x100000f87 <+7>:  movl   -0x4(%rbp), %eax
+    0x100000f8a <+10>: popq   %rbp
+    0x100000f8b <+11>: retq
+    0x100000f8c <+12>: nopl   (%rax)
+
+func`main:
+--> 0x100000f90 <+0>:  pushq  %rbp
+    0x100000f91 <+1>:  movq   %rsp, %rbp
+    0x100000f94 <+4>:  subq   $0x20, %rsp
+    0x100000f98 <+8>:  movl   $0x6, %eax
+    0x100000f9d <+13>: movl   %edi, -0x4(%rbp)
+    0x100000fa0 <+16>: movq   %rsi, -0x10(%rbp)
+    0x100000fa4 <+20>: movl   %eax, %edi
+    0x100000fa6 <+22>: callq  0x100000f80               ; doit at func.c:2
+    0x100000fab <+27>: xorl   %edi, %edi
+    0x100000fad <+29>: movl   %eax, -0x14(%rbp)
+    0x100000fb0 <+32>: movl   %edi, %eax
+    0x100000fb2 <+34>: addq   $0x20, %rsp
+    0x100000fb6 <+38>: popq   %rbp
+    0x100000fb7 <+39>: retq
+(lldb)
+```
+We can inspect the current values of rsp and rbp:
+```console
+(lldb) register read $rsp $rbp
+     rsp = 0x00007fff5fbfeea8
+     rbp = 0x00007fff5fbfeeb8
+```
+Lets take a look at `0x00007fff5fbfeeb8`:
+```console
+(lldb) dis -s 0x00007fff8ab865ad
+libdyld.dylib`start:
+    0x7fff8ab865ad <+1>: movl   %eax, %edi
+    0x7fff8ab865af <+3>: callq  0x7fff8ab865e0            ; symbol stub for: exit
+    0x7fff8ab865b4 <+8>: hlt
+    0x7fff8ab865b5:      nop
+libdyld.dylib`OSAtomicCompareAndSwapPtrBarrier:
+    0x7fff8ab865b6 <+0>: jmpq   *-0x116c63e4(%rip)        ; (void *)0x00007fff923209dc: OSAtomicCompareAndSwapPtrBarrier$VARIANT$mp
+
+libdyld.dylib`free:
+    0x7fff8ab865bc <+0>: jmpq   *-0x12b9c562(%rip)        ; (void *)0x00007fff951f3e98: free
+
+libdyld.dylib`malloc:
+    0x7fff8ab865c2 <+0>: jmpq   *-0x12b9c560(%rip)        ; (void *)0x00007fff951f10a2: malloc
+```
+
+After `pushq %rbp` we can again inspect the stack:
+```console
+(lldb) memory read -f x -c 4 -s 8 `$rsp`
+0x7fff5fbfeea0: 0x00007fff5fbfeeb8 0x00007fff8ab865ad
+0x7fff5fbfeeb0: 0x00007fff8ab865ad 0x0000000000000000
+```
+We can see that `0x00007fff5fbfeeb8` has been pushed onto the stack (written to the memory location pointed
+to by register rsp, and rsp has been decremented by 8 (8 bytes, 64 bit operating system):
+```console
+(lldb) memory read -f x -c 1 -s 8 `$rsp`
+0x7fff5fbfeea0: 0x00007fff5fbfeeb8
+(lldb) memory read -f x -c 1 -s 8 `$rsp + 8`
+0x7fff5fbfeea8: 0x00007fff8ab865ad
+```
+
+`subq   $0x20, %rsp` is making room for 32 bytes on the stack. This is used to store local variables argc, argv
+`movl   $0x6, %eax` move the value 6 into eax
+`movl   %edi, -0x4(%rbp)` save value in edi. This is argc:
+
+```console
+(lldb) settings show target.run-args
+target.run-args (array of strings) =
+  [0]: "5"
+(lldb) register read -f d $edi
+     edi = 2
+(lldb) memory read -f x -s 4 -c 1 `$rbp - 4`
+0x7fff5fbfee9c: 0x00000002
+```
+
+`movq   %rsi, -0x10(%rbp)` is saving the pointer to char** on the stack. This and the previous call
+are setting up the local variables `argc` and `argv`.
+```console
+(lldb) register read $rsi
+     rsi = 0x00007fff5fbfeec8
+(lldb) memory read -f x -c 1 -s 8 `$rbp - 16`
+0x7fff5fbfee90: 0x00007fff5fbfeec8
+(lldb) memory read -f p -c 1 0x00007fff5fbfeec8
+0x7fff5fbfeec8: 0x00007fff5fbff140
+(lldb) memory read -f s -c 1 0x00007fff5fbff140
+0x7fff5fbff140: "/Users/danielbevenius/work/assembler/c/func"
+```
+Remeber that `-0x10` is hex so that which means we have to subtract 16 to find the location on the stack.
+ get the second argument:
+```console
+(lldb) memory read -f p -c 1 `0x00007fff5fbfeec8 + 8`
+0x7fff5fbfeed0: 0x00007fff5fbff16c
+(lldb) memory read -f s -c 1 0x00007fff5fbff16c
+0x7fff5fbff16c: "5"
+```
+
+`movl   %eax, %edi` moves 6 into edi which is the argument for `doit`
+
+So, this is our stack (for main that is):
+```console
+       +--------------------------+
+       |    0x00007fff5fbfeea8    |  // return address placed by call operator
+       +--------------------------+
+       |            |     2       |  // argc
+       +--------------------------+
+       |                          |  
+       +--------------------------+
+       |    0x00007fff5fbfeec8    |  // argv
+       +--------------------------+
+rbp--> |                          |  
+       +--------------------------+
+```
+
+```console
+(lldb) dis -s  0x100000f80
+func`doit:
+    0x100000f80 <+0>:  pushq  %rbp
+    0x100000f81 <+1>:  movq   %rsp, %rbp
+    0x100000f84 <+4>:  movl   %edi, -0x4(%rbp)
+    0x100000f87 <+7>:  movl   -0x4(%rbp), %eax
+    0x100000f8a <+10>: popq   %rbp
+    0x100000f8b <+11>: retq
+    0x100000f8c <+12>: nopl   (%rax)
+```
+
+```console
+       +--------------------------+
+       |    0x00007fff5fbfeea8    |  // return address placed by call operator
+       +--------------------------+
+       |            |     2       |  // argc
+       +--------------------------+
+       |                          |  
+       +--------------------------+
+       |    0x00007fff5fbfeec8    |  // argv
+       +--------------------------+
+rbp--> |       0x100000fab        |  // callq 0x100000f80 : doit(6) will push the return address onto the stack
+       +--------------------------+
+```
+
+```console
+(lldb) register read rbp
+     rbp = 0x00007fff5fbfeea0
+```
+
+       +--------------------------+
+       |    0x00007fff5fbfeea8    |  // return address placed by call operator
+       +--------------------------+
+       |            |     2       |  // argc
+       +--------------------------+
+       |                          |  
+       +--------------------------+
+       |    0x00007fff5fbfeec8    |  // argv
+       +--------------------------+
+       |       0x100000fab        |  // callq 0x100000f80 : doit(6) will push the return address onto the stack
+       +--------------------------+
+       |    0x00007fff5fbfeea0    |  // store the value of main's rbp
+       +--------------------------+
+
+Next, set doit's base pointer to the currentl value of rsp. 
+
+```console
+(lldb) dis -f
+func`doit:
+->  0x100000f80 <+0>:  pushq  %rbp
+```
+Just to verify my own understanding that the this is just continuous memory and "stack frames" are just sections
+of this memory. So we should be able, from within doit, to access local variables of the main function. rbp till
+points to base of main's stack. Lets try to get the value of argc:
+```console
+(lldb) memory read -f x -c 1 -s 4 `$rbp - 4`
+0x7fff5fbfee9c: 0x00000002
+```
+And how about the name of the executable:
+```console
+(lldb) memory read -f x -c 1 -s 8 `$rbp - 16`
+0x7fff5fbfee90: 0x00007fff5fbfeec8
+(lldb) memory read -f x -c 1 -s 8 0x00007fff5fbfeec8
+0x7fff5fbfeec8: 0x00007fff5fbff140
+(lldb) memory read -f s -c 1 0x00007fff5fbff140
+0x7fff5fbff140: "/Users/danielbevenius/work/assembler/c/func"
+```
+
+    
 The Stack Pointer register (rsp) is used to point to the top of the stack in memory. 
 
     p2           8(%esp)
@@ -667,3 +876,4 @@ The following are the supported values for the -f <format> argument:
 'i' or "instruction"
 'v' or "void"
 ```
+
