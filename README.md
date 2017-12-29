@@ -877,3 +877,11 @@ The following are the supported values for the -f <format> argument:
 'v' or "void"
 ```
 
+### movzx
+If you try to move a value using:
+```assembler
+movw %ax, %bx
+```
+The upper part of ebx might contain non-zero value. You have to set them to zero to not get an incorrect
+value. Or you can use `movzx` which will do that for you.
+
