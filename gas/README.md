@@ -287,3 +287,12 @@ You can use dtruss to see what system call are being done:
     $ sudo dtruss `pwd`/malloc
 
 
+### comp
+Compares two values and sets the EFLAGS register. It performs subtraction on the operands:
+
+    cmp op1, op2
+
+op2 - op1. None of the operands are modified but the EFLAGS reg is set as if subtraction too
+place.
+
+
