@@ -885,3 +885,68 @@ movw %ax, %bx
 The upper part of ebx might contain non-zero value. You have to set them to zero to not get an incorrect
 value. Or you can use `movzx` which will do that for you.
 
+### Processing
+Try to remember that what you see as function calls are just setting up registers/stack with the values that the function expects and then jumping to that address.
+The `call` operator is used to it will also store the return address, the address
+of the instruction following the call operator instruction. This allows us to use 
+the `ret` instruction. 
+
+        address      +------------------------+    data
+      +--------------|        RAM             |----------------+
+      |+-------------|                        |---------------+|
+      ||+------------|                        |--------------+||
+      |||+-----------|                        |-------------+|||
+      ||||+----------|                        |------------+||||
+      |||||+---------|                        |-----------+|||||
+      ||||||+--------|                        |----------+||||||
+      |||||||+-------|                        |---------+|||||||
+      ||||||||       +------------------------+         ||||||||
+                         set |      | enable            
+      
+     +--------+                                        +--------+
+     |00000001|                                        |10101010|
+     +--------+                                        +--------+
+     |00000010|                                        |11101011|
+     +--------+                                        +--------+
+     ...                                               ...
+
+Now, data can be both instructions for the processor to perfom or it can be 
+data like numbers, addresses, etc.
+
+When the CPU needs to process an instruction it will set that address on the address bus and set enable wire and RAM will send back whatever data is at that address on the data bus.
+To store data in RAM the CPU need to set the address on the address bus, put the data on the databus and set the `set` wire.
+
+Take the output you see in lldb when you disassemble a function:
+```
+(lldb) dis -n main -b
+stack-alloc`main:
+    0x100000f80 <+0>:  55                    pushq  %rbp
+    0x100000f81 <+1>:  48 89 e5              movq   %rsp, %rbp
+    0x100000f84 <+4>:  31 c0                 xorl   %eax, %eax
+    0x100000f86 <+6>:  c7 45 fc 00 00 00 00  movl   $0x0, -0x4(%rbp)
+    0x100000f8d <+13>: 89 7d f8              movl   %edi, -0x8(%rbp)
+    0x100000f90 <+16>: 48 89 75 f0           movq   %rsi, -0x10(%rbp)
+->  0x100000f94 <+20>: 8b 3d 0e 00 00 00     movl   0xe(%rip), %edi
+    0x100000f9a <+26>: 89 7d e8              movl   %edi, -0x18(%rbp)
+    0x100000f9d <+29>: c7 45 e4 06 00 00 00  movl   $0x6, -0x1c(%rbp)
+    0x100000fa4 <+36>: 5d                    popq   %rbp
+    0x100000fa5 <+37>: c3                    retq
+```
+Take `55 pushq %rbp`, 55 is 1010101 in binary. If we read `0x100000f80` that should match I think:
+```console
+(lldb) memory read -f b -c 1 -s 1 0x100000f80
+0x100000f80: 0b01010101
+
+(lldb) memory read -f x -c 1 -s 1 0x100000f80
+0x100000f80: 0x55
+```
+For the second instruction, `movq`: 
+```console
+(lldb) memory read -f x -c 3 -s 1 0x100000f81
+0x100000f81: 0x48 0x89 0xe5
+```
+It looks like there are differnt opcodes depending on the type of operands. I was expecting `movl` to all have the same
+opcode but they don't in this example. But I did notice that two do that move a value from a register to the stack (89).
+
+I know I'm probaly repeating myself but we can see that our program has been loaded into RAM and the instructions are
+just opcodes in memory.
