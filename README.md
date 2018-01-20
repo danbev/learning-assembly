@@ -27,6 +27,25 @@ ax  = 16-bit mode
 eax = 32-bit mode
 rax = 64-bit mode
 
+64-bit register | Lower 32 bits | Lower 16 bits | Lower 8 bits
+==============================================================
+rax             | eax           | ax            | al
+rbx             | ebx           | bx            | bl
+rcx             | ecx           | cx            | cl
+rdx             | edx           | dx            | dl
+rsi             | esi           | si            | sil
+rdi             | edi           | di            | dil
+rbp             | ebp           | bp            | bpl
+rsp             | esp           | sp            | spl
+r8              | r8d           | r8w           | r8b
+r9              | r9d           | r9w           | r9b
+r10             | r10d          | r10w          | r10b
+r11             | r11d          | r11w          | r11b
+r12             | r12d          | r12w          | r12b
+r13             | r13d          | r13w          | r13b
+r14             | r14d          | r14w          | r14b
+r15             | r15d          | r15w          | r15b
+
 #### Caller saved
 These registers might be changed when making function calls and it is the callers responsibility to save them.
 
@@ -950,3 +969,31 @@ opcode but they don't in this example. But I did notice that two do that move a 
 
 I know I'm probaly repeating myself but we can see that our program has been loaded into RAM and the instructions are
 just opcodes in memory.
+
+### Returning
+
+### jnz
+
+### test
+````
+  movq $1, %rax
+  movq $2, %rbx
+  testq %rax, %rbx
+```
+temp = 0001 & 0010
+if (temp = 0) 
+  ZF = 1
+elese 
+  ZF = 0
+```
+
+### jne
+```
+  movq $1, %rax
+  movq $2, %rbx
+  testq %rax, %rbx
+  jne not_equal
+```
+Think jump if ZF = 0. If the two values compared don't have the same bits in common the will 
+not and to zero, so temp > 0 and ZF will be set to 0.
+
