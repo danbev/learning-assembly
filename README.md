@@ -6,6 +6,7 @@ This project only contains small programs to help me learn assembler.
 [c](./c) C programs used for viewing the generated assembler code.  
 
 ### Registers
+```console
 * rax     Accumlator register. Caller saved.  
 * rbx     Base register. Caller saved.  
 * rdi     Destination Index pointer. Callee saved. Used to pass 1st argument to functions  
@@ -45,6 +46,7 @@ r12             | r12d          | r12w          | r12b
 r13             | r13d          | r13w          | r13b
 r14             | r14d          | r14w          | r14b
 r15             | r15d          | r15w          | r15b
+```
 
 #### Caller saved
 These registers might be changed when making function calls and it is the callers responsibility to save them.
