@@ -511,12 +511,14 @@ read the file into memory and to look for a header to determine the executable f
 is often referred to as `magic` which is a know digit identifying a certain type of executable format.
 
 Magic's:  
+```console
 \x7FELF      Executable and Library Format. Native in Linux and UNIX though not supported by OS X  
 \#!           Script. The kernel looks for the string following #! and executes it as a command passing  
              the rest of the file to the process through stdin  
 0xcafebabe   Multi-arch binaries for OS X only  
 0xfeedface   OS X native binary format 32 bit  
 0xfeedfacf   OS X native binary format 64 bit  
+```
 
 ### Mach-Object Binaries
 Mach-Object (Mach-O) is a legacy of its NeXTSTEP origins. The header can be found in /usr/include/mach-o/loader.h
