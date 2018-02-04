@@ -92,19 +92,22 @@ The address size override prefix informs the processor that the program will swi
 ##### Modifiers
 * ModeR/M 
 This byte tells the processor which registers or memory locations to use as the instruction's operands
-
+```console
 7     6 5    3 2     0
 +------+------+------+
 | mod  | reg2 | reg1 |
 +------+------+------+
+```
 
 Both the reg1 and reg2 fields take three-bit register codes, indicating which registers to use as the instruction's operands. 
 By default, reg1 is the source operand and reg2 is the destination. 
 Mod field
+```console
 00          [reg1]       operand's address is in register reg1
 01          [reg1+byte]  operand's memory address is reg1 plus a byte-sized displacement
 10          [reg1+word]  operand's memory address is reg1 plus a word-sized displacement
 11          reg1         operand is reg1
+```
 
 * SIB (Scale*Index+Base)
 Only available in 32-bit mode.
