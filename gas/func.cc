@@ -1,7 +1,8 @@
 #include <iostream>
-extern "C" void dot();
+extern "C" int dot(int x);
 
 int main(int argc, char** argv) {
-  dot();
+  int ret = dot(10);
+  std::cout << ret << '\n';
   return 0;
 }
