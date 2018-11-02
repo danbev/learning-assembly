@@ -18,6 +18,9 @@ $(OUT)/func: func.cc $(OUT)/func.o | out
 out:
 	mkdir $(OUT)
 
+$(OUT)/avx_mul : avx_mul.c | out
+	clang -mavx -o $@ $<
+
 .PHONY: clean
 
 clean: 
