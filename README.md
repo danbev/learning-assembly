@@ -1004,3 +1004,116 @@ elese
 Think jump if ZF = 0. If the two values compared don't have the same bits in common the will 
 not and to zero, so temp > 0 and ZF will be set to 0.
 
+
+### Processor architectures
+IBM Power architecture is a reduced instruction set computing (RISC). It includes POWER, PowerPC and Cell processors.
+
+Advanded RISC Machines (ARM) design RISC processors.
+
+Intel use complex instruction set computer (CISC)
+
+
+### Single Instruction Multiple Data (SIMD)
+We know we can add two numbers together using the add operator. We can consider this a Single Instruction Single Data (SISD).
+int a[] = {0, 1, 2, 3, 4, 5, 6, 7}
+int b[] = {0, 1, 2, 3, 4, 5, 6, 7}
+int sum = a[1] + b[1] + a[2] + b[2] ...
+So we want a single instruction to operate on multiple data (the arrays), so an instruction could be
+add a, b
+And would operator on the entire a and b and sum them.
+SIMD computing element performs the same operation on multiple data items simultaneously.
+x86’s first SIMD extension, which is called MMX technology.
+
+MMX technology adds eight 64-bit registers to the core x86-32 platform:
+63                  0
++-------------------+
+|     MM7           |
+--------------------|
+|     MM6           |
+--------------------|
+|     MM5           |
+--------------------|
+|     MM4           |
+--------------------|
+|     MM3           |
+--------------------|
+|     MM2           |
+--------------------|
+|     MM1           |
+--------------------|
+|     MM0           |
++-------------------+
+
+These registers can be used to perform SIMD operations using eight 8-bit integers, four 16-bit integers, 
+or two 32-bit integers. Both signed and unsigned integers are supported.
+The MMX registers cannot be used to perform floating-point arithmetic or address operands located in memory.
+
+
+pmaddwd
+Performs a packed signed-integer multiplication followed by a signed-integer addition that uses 
+neighboring data elements within the products. This instruction can be used to calculate an integer dot product.
+
+
+SSE performed up to four operations at a time. AVX-512 performs up to 16 operations at a time.
+
+Use SIMD intrinsics. It’s like assembly language, but written inside your C/C++ program. 
+SIMD intrinsics actually look like a function call, but generally produce a single instruction (a vector operation instruction, also known as a SIMD instruction).
+
+#### Streaming SIMD Extensions (SSE)
+SSE is a set of instructions supported by Intel processors that perform high-speed operations on large chunks of data.
+
+#### Advanced Vector Extensions (AVX)
+They perform many of the same operations as SSE instructions, but operate on larger chunks of data at higher speed.
+Intel has released additional instructions in the AVX2 and AVX512 sets.
+
+
+### Intrinsics
+An AVX instruction is an assembly command that performs an indivisible operation. For example, the AVX instruction vaddps adds two operands and places the result in a third.
+To perform the operation in C/C++, the intrinsic function _mm256_add_ps() maps directly to vaddps, combining the performance of assembly with the convenience of a high-level function.
+An intrinsic function doesn't necessarily map to a single instruction, but AVX/AVX2 intrinsics provide reliably high performance compared to other C/C++ functions.
+
+Here are the CPUs that support AVX:
+
+Intel's Sandy Bridge/Sandy Bridge E/Ivy Bridge/Ivy Bridge E
+Intel's Haswell/Haswell E/Broadwell/Broadwell E
+AMD's Bulldozer/Piledriver/Steamroller/Excavator
+Every CPU that supports AVX2 also supports AVX. Here are the devices:
+
+Intel's Haswell/Haswell E/Broadwell/Broadwell E
+AMD's Excavator
+
+Find the model of my processor:
+```console
+$ sysctl -n machdep.cpu.brand_string
+Intel(R) Core(TM) i7-4960HQ CPU @ 2.60GHz
+```
+Sandy Bridge is the codename for the microarchitecture used in the "second generation" of the Intel Core processors (Core i7, i5, i3) 
+
+Most of the intrinsic functions use specific data types.
+__m128	128-bit vector containing 4 floats
+__m128d	128-bit vector containing 2 doubles
+__m128i	128-bit vector containing integers
+__m256	256-bit vector containing 8 floats
+__m256d	256-bit vector containing 4 doubles​
+__m256i	256-bit vector containing integers
+
+AVX512 supports 512-bit vector types that start with _m512, but AVX/AVX2 vectors don't go beyond 256 bits
+If the type does not have suffix (like d or i then it is a float)
+A _m256i may contain 32 chars, 16 shorts, 8 ints, or 4 longs. These integers can be signed or unsigned.
+
+The intrinsic function names have the following format:
+_mm<bit width>_<name>_<data type>
+
+The bit width is the size of the returned vector. Just empty for 128 bit vectors.
+The name is just the name of the function and the datatype is the type of the functions arguments.
+The data type can be set to one of the following values:
+- ps                                  packed single precision floats
+- pd                                  packed double precision doubles
+- epi8/epi16/epi32/epi64              vector containing signed int 8/16/32/64
+- epu8/epu16/epu32/epu64              vector containing unsigned int 8/16/32/64
+- si128/si256                         unspecified 128-bit vector or 256-bit vector
+- m128/m128i/m128d/m256/m256i/m256d   
+
+
+
+
