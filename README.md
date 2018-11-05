@@ -1017,9 +1017,11 @@ Intel use complex instruction set computer (CISC)
 
 ### Single Instruction Multiple Data (SIMD)
 We know we can add two numbers together using the add operator. We can consider this a Single Instruction Single Data (SISD).
+```
 int a[] = {0, 1, 2, 3, 4, 5, 6, 7}
 int b[] = {0, 1, 2, 3, 4, 5, 6, 7}
 int sum = a[1] + b[1] + a[2] + b[2] ...
+```
 So we want a single instruction to operate on multiple data (the arrays), so an instruction could be
 add a, b
 And would operator on the entire a and b and sum them.
@@ -1027,6 +1029,7 @@ SIMD computing element performs the same operation on multiple data items simult
 x86’s first SIMD extension, which is called MMX technology.
 
 MMX technology adds eight 64-bit registers to the core x86-32 platform:
+```
 63                  0
 +-------------------+
 |     MM7           |
@@ -1045,11 +1048,11 @@ MMX technology adds eight 64-bit registers to the core x86-32 platform:
 --------------------|
 |     MM0           |
 +-------------------+
+```
 
 These registers can be used to perform SIMD operations using eight 8-bit integers, four 16-bit integers, 
 or two 32-bit integers. Both signed and unsigned integers are supported.
 The MMX registers cannot be used to perform floating-point arithmetic or address operands located in memory.
-
 
 pmaddwd
 Performs a packed signed-integer multiplication followed by a signed-integer addition that uses 
