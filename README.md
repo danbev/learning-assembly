@@ -987,6 +987,8 @@ just opcodes in memory.
   movq $2, %rbx
   testq %rax, %rbx
 ```
+
+```
 temp = 0001 & 0010
 if (temp = 0) 
   ZF = 1
