@@ -55,8 +55,8 @@ These registers might be changed when making function calls and it is the caller
 These registers are preserved/saved accross function calls.
 
 ### Instructions
-Just to make sure that you are clear on this is that instructions are stored in memory and the processor runs by reading these
-instructions. Any data required by the instructions is also read/stored from memory. To keep these sepaarate there are two pointers
+Just to make sure that we are clear on this is that instructions are stored in memory and the processor runs by reading these
+instructions. Any data required by the instructions is also read/stored from memory. To keep these separate there are two pointers
 to help, the instruction pointer, and the data pointer.
 
 `instruction pointer` is used to keep track of the instructions already executed and the next instruction. Instructions can alter
@@ -77,15 +77,15 @@ When you see a `q` appended to an instruction that indicated a full quadword (64
 Opcode is the only required part.
 
 ##### Instruction Prefixes
-* Lock and repeat
+* Lock and repeat  
 Indicates that any shared memory areas will be used exclusively by the instruction (multiprocessor systems)
-* Segment override and branch hint
+* Segment override and branch hint  
 Segement overrides defines that instructions can override defined segment registers.
 The branch hint attempt to give the processor a clue as to the most likely path the program will take in a conditional jump statement.
-* Operand size override
+* Operand size override  
 The operand size override prefix informs the processor that the program will switch between 16-bit and 32-bit operand sizes within the instruction code. 
 This enables the program to warn the processor when it uses larger-sized operands, helping to speed up the assignment of data to register
-* Address size
+* Address size  
 The address size override prefix informs the processor that the program will switch between 16-bit and 32-bit memory addresses.
 
 
@@ -1119,6 +1119,11 @@ The data type can be set to one of the following values:
 - si128/si256                         unspecified 128-bit vector or 256-bit vector
 - m128/m128i/m128d/m256/m256i/m256d   
 
+
+Saturation arithmetic is like normal arithmetic except that when the result of the operation that would 
+overflow or underflow an element in the vector, that is clamped at the end of the range and not allowed
+to wrap around. This can make sense for things like pixels where if the value exceeds the max value
+allowed for that pixel is should simply use the largest possible value and not wrap around.
 
 
 
