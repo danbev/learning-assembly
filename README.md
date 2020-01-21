@@ -7,7 +7,7 @@ This project only contains small programs to help me learn assembler.
 
 ### Registers
 ```console
-* rax     Accumlator register. Caller saved.  
+* rax     Accumlator register. Caller saved. Used for return values from functions. 
 * rbx     Base register. Caller saved.  
 * rdi     Destination Index pointer. Callee saved. Used to pass 1st argument to functions  
 * rsi     Source Index pointer. Caller saved. Used to pass 2nd argument to functions  
@@ -146,6 +146,8 @@ Floating-point args are passed in:
 6 in xmm5
 7 in xmm6
 ```
+
+`rax` is used for return values from functions.
 
 When a process is started the stack is allocated with a fixed size in virtual memory by the OS. The area is released when
 the process terminates. Each thread as its own stack.
@@ -1382,6 +1384,13 @@ Next we pop the top value of the stack into `rsi`. the value is:
 This is `argc` which is now stored in rsi.
 Next, the stack pointer is copied into rdx.
 After this I think we have a stack alignement operation, the `and`. TODO: verify this!
+```
+   0x000000000040045d <+13>:	and    $0xfffffffffffffff0,%rsp
+```
+This operation will leave all the bytes in rsp intact except for the last four
+bits which will be changed to 0.
+
+
 After that we are going to copy `__libc_csu_fini` into r8, `__libc_csu_init` into
 rcx, and `main` into rdi:
 ```console
@@ -1401,8 +1410,11 @@ Finally we have the `call` to:
 ```
 So, that is all that the `_start` function does. 
 
+Just a note about `csu` which I think stands for `c start up`.
+
 We saw that the address to our `main` function was passed in the `rdi` register,
-so how does it get used in `__libc_start_main`?  
+so how does it get used in [__libc_start_main](https://code.woboq.org/userspace/glibc/csu/libc-start.c.html#111)?  
+We can see main getting called [here](https://code.woboq.org/userspace/glibc/csu/libc-start.c.html#339).
 
 
 So lets show the registers:
