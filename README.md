@@ -1126,4 +1126,61 @@ to wrap around. This can make sense for things like pixels where if the value ex
 allowed for that pixel is should simply use the largest possible value and not wrap around.
 
 
+### Function calls
+When our main function calls a function it will push an 8 byte address onto the
+stack. This is the address of the instruction to be executed after the called
+function completes. So this is pushed onto the stack by the `call` instruction
+and the function calls `ret` which will pop that value off the stack and will
+jmp to that instruction. These addresses will be 8-bytes.
+Inside the function we often need to use the stack so we have to be careful and
+clean up (pop) off any values we have pushed before the `ret` instruction is
+called or we will jmp to different value/address (?).
+This is also true for our main function, before it is called an 8-byte return
+address is pushed onto the stack.
 
+The stack has to have a 16-byte alignment when you call a function. This requirement
+comes from SIMD that operate of larger blocks of data (in parallel). These operations
+might require that the memory addresses are multiples of 16 bytes.
+What does that mean. 
+```
+       0+----------+
+	| ret addr |
+	+----------+
+```
+
+### Function vs Prodedure
+A function returns a value whereas a prodedure does not.
+
+
+### gdb
+```console
+(gdb) info registers 
+rax            0x400540            4195648
+rbx            0x0                 0
+rcx            0x7ffff7dce738      140737351837496
+rdx            0x7fffffffd6e8      140737488344808
+rsi            0x7fffffffd6d8      140737488344792
+rdi            0x1                 1
+rbp            0x400570            0x400570 <__libc_csu_init>
+rsp            0x7fffffffd5f0      0x7fffffffd5f0
+r8             0x7ffff7dcfda0      140737351843232
+r9             0x7ffff7dcfda0      140737351843232
+r10            0x7                 7
+r11            0x2                 2
+r12            0x400450            4195408
+r13            0x7fffffffd6d0      140737488344784
+r14            0x0                 0
+r15            0x0                 0
+rip            0x400541            0x400541 <main+1>
+eflags         0x246               [ PF ZF IF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+es             0x0                 0
+fs             0x0                 0
+gs             0x0                 0
+```
+Note that the third column is the registers value in decimal where that makes
+sense. In cases where it does not make sense, like for registers `rsp`, `rip`,
+and `rbp` the are only for storing addresses which is why these registers
+are just shoing the same values.
