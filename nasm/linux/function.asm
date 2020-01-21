@@ -4,8 +4,10 @@ section .text
       global main
 
 main:
+section .text
   push  rbp
   mov   rbp, rsp
+  mov   rdi, $8
   call  doit
   leave
   ret
@@ -17,10 +19,10 @@ section .data
 section .text
   push  rbp
   mov   rbp, rsp
+  mov rdx, rdi
   mov rax, 1
   mov rdi, 1
   mov rsi, .msg
-  mov rdx, .len
   syscall
   leave
   ret
