@@ -1338,6 +1338,50 @@ Dump of assembler code for function _start:
    0x000000000040047e <+46>:	hlt    
 End of assembler dump.
 ```
+The `__libc_start_main` function looks like this:
+```c
+int __libc_start_main(  int (*main) (int, char * *, char * *),
+			    int argc, char * * ubp_av,
+			    void (*init) (void),
+			    void (*fini) (void),
+			    void (*rtld_fini) (void),
+			    void (* stack_end));
+```
+After clearing the base pointer, which is something specified in the ABI, we
+move the content of `rdx` into r9:
+```console
+(gdb) x/x $rdx
+$ 0x7ffff7de3f00 <_dl_fini>:	0xf3
+```
+This is the sixth argument to __libc_start_main.
+Next we pop the top value of the stack into `rsi`. the value is:
+```console
+(gdb) x/1xg $rsp
+0x7fffffffd6b0:	0x0000000000000002
+```
+This is `argc` which is now stored in rsi.
+Next, the stack pointer is copied into rdx.
+After this I think we have a stack alignement operation, the `and`. TODO: verify this!
+After that we are going to copy `__libc_csu_fini` into r8, `__libc_csu_init` into
+rcx, and `main` into rdi:
+```console
+(gdb) x/x 0x4005e0
+0x4005e0 <__libc_csu_fini>:	0xf3
+(gdb) x/x 0x400570
+0x400570 <__libc_csu_init>:	0xf3
+(gdb) x/x 0x400540
+0x400540 <main>:	0x55
+```
+Finally we have the `call` to:
+```console
+(gdb) x/1xg (0x600fe8)
+0x600fe8:	0x00007ffff7a33720
+(gdb) x/1xg 0x00007ffff7a33720
+0x7ffff7a33720 <__libc_start_main>:	0xc0315641fa1e0ff3
+```
+So, that is all that the `_start` function does. 
+
+
 So lets show the registers:
 ```console
 (gdb) info registers 
@@ -1367,4 +1411,4 @@ fs             0x0                 0
 gs             0x0                 0
 ```
 So notice that `rbp` is `0x0` and the `rip` points to the first instruction
-in _start.
+Tin _start.
