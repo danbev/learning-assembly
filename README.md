@@ -127,6 +127,26 @@ For example:
 The stack consists of memory area for parameters, local variables, and the return address (sometimes return values depending
 on the calling conventions which might dictate that return values be passed in registers.
 
+System V AMD64 calling conventions:
+```
+1 in rdi
+2 in rsi
+3 in rdx
+4 in rcx
+5 in r8
+6 in r9
+```
+Floating-point args are passed in:
+```
+1 in xmm0
+2 in xmm1
+3 in xmm2
+4 in xmm3
+5 in xmm4
+6 in xmm5
+7 in xmm6
+```
+
 When a process is started the stack is allocated with a fixed size in virtual memory by the OS. The area is released when
 the process terminates. Each thread as its own stack.
 
@@ -1380,6 +1400,9 @@ Finally we have the `call` to:
 0x7ffff7a33720 <__libc_start_main>:	0xc0315641fa1e0ff3
 ```
 So, that is all that the `_start` function does. 
+
+We saw that the address to our `main` function was passed in the `rdi` register,
+so how does it get used in `__libc_start_main`?  
 
 
 So lets show the registers:
