@@ -1,4 +1,2 @@
 *.o
 *.swp
-nasm/linux/hello
-nasm/linux/printf

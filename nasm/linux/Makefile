@@ -10,7 +10,13 @@ printf: printf.o
 printf.o: printf.asm
 	nasm -f elf64 -g -F dwarf -o $@ $<
 
+function: function.o
+	gcc -o $@ $< -no-pie
+
+function.o: function.asm
+	nasm -f elf64 -g -F dwarf -o $@ $<
+
 clean:
 	$(info "cleaning...")
-	rm -rf hello printf
+	rm -rf hello printf function
 
