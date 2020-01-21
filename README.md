@@ -1184,3 +1184,187 @@ Note that the third column is the registers value in decimal where that makes
 sense. In cases where it does not make sense, like for registers `rsp`, `rip`,
 and `rbp` the are only for storing addresses which is why these registers
 are just shoing the same values.
+
+```console
+(gdb) p  $rsp
+$2 = (void *) 0x7fffffffd5f0
+```
+We can examine the memory that `rsp` is pointing to using:
+```console
+(gdb) x/1xw $rsp
+0x7fffffffd5f0:	0x00400570
+```
+Which we can verify is the same as:
+```console
+(gdb) x/1xw 0x7fffffffd5f0
+0x7fffffffd5f0:	0x00400570
+```
+```console
+(gdb) x/1xw 0x400570
+0x400570 <__libc_csu_init>:	0xfa1e0ff3
+```
+```console
+(gdb) disassemble 
+Dump of assembler code for function main:
+=> 0x0000000000400540 <+0>:	push   %rbp
+   0x0000000000400541 <+1>:	mov    %rsp,%rbp
+   0x0000000000400544 <+4>:	callq  0x40054b <doit>
+   0x0000000000400549 <+9>:	leaveq 
+   0x000000000040054a <+10>:	retq   
+End of assembler dump.
+(gdb) i r rsp rbp
+rsp            0x7fffffffd5f8      0x7fffffffd5f8
+rbp            0x400570            0x400570 <__libc_csu_init>
+```
+So after pushing rpb onto the stack we should be able to see the same value
+as above at the top of the stack:
+```console
+(gdb) x/1xg $rsp
+0x7fffffffd5f0:	0x0000000000400570
+```
+So I mainly did this to make sure that I can examine (x) the contents of the
+stack (I'm used to using lldb and some things are different and I'm trying to
+get used to them).
+```console
+LD_SHOW_AUXV=1 gdb --args ./function bajja
+AT_SYSINFO_EHDR: 0x7ffd05f63000
+AT_HWCAP:        bfebfbff
+AT_PAGESZ:       4096
+AT_CLKTCK:       100
+AT_PHDR:         0x562afc5d4040
+AT_PHENT:        56
+AT_PHNUM:        10
+AT_BASE:         0x7f66c06cb000
+AT_FLAGS:        0x0
+AT_ENTRY:        0x562afc7327b0
+AT_UID:          12974
+AT_EUID:         12974
+AT_GID:          12974
+AT_EGID:         12974
+AT_SECURE:       0
+AT_RANDOM:       0x7ffd05e246c9
+AT_HWCAP2:       0x0
+AT_EXECFN:       /usr/bin/gdb
+AT_PLATFORM:     x86_64
+```
+```console
+(gdb) x/10xg $rsp
+0x7fffffffd6b0:	0x0000000000000002	0x00007fffffffda14
+0x7fffffffd6c0:	0x00007fffffffda58	0x0000000000000000
+0x7fffffffd6d0:	0x00007fffffffda5e	0x00007fffffffe15c
+0x7fffffffd6e0:	0x00007fffffffe173	0x00007fffffffe19a
+0x7fffffffd6f0:	0x00007fffffffe1ab	0x00007fffffffe1c0
+```
+In this case `argc` is on top of the stack, we have two as the first is the
+name of the executable.
+```console
+(gdb) x/s 0x00007fffffffda14
+0x7fffffffda14:	"/home/dbeveniu/work/assembler/learning-assembly/nasm/linux/function"
+(gdb) x/s 0x00007fffffffda58
+0x7fffffffda58:	"bajja"
+```
+Following that are the environment variables.
+
+
+### start up
+```console
+$ size function
+   text	   data	    bss	    dec	    hex	filename
+   1157	    485	      8	   1650	    672	function
+$ file function
+function: ELF 64-bit LSB executable, x86-64, version 1 (SYSV),
+dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0,
+BuildID[sha1]=a4151387be0b5a64a852e5890a27e09c3b48994d, with debug_info, not stripped
+```
+```console
+$ readelf -h function
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x400450
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          9688 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         9
+  Size of section headers:           64 (bytes)
+  Number of section headers:         35
+  Section header string table index: 34
+```
+We can see that our entry point is `0x400450`:
+```console
+0000000000400450 <_start>:
+  400450:	f3 0f 1e fa          	endbr64 
+  400454:	31 ed                	xor    %ebp,%ebp
+  400456:	49 89 d1             	mov    %rdx,%r9
+  400459:	5e                   	pop    %rsi
+  40045a:	48 89 e2             	mov    %rsp,%rdx
+  40045d:	48 83 e4 f0          	and    $0xfffffffffffffff0,%rsp
+  400461:	50                   	push   %rax
+  400462:	54                   	push   %rsp
+  400463:	49 c7 c0 e0 05 40 00 	mov    $0x4005e0,%r8
+  40046a:	48 c7 c1 70 05 40 00 	mov    $0x400570,%rcx
+  400471:	48 c7 c7 40 05 40 00 	mov    $0x400540,%rdi
+  400478:	ff 15 6a 0b 20 00    	callq  *0x200b6a(%rip)        # 600fe8 <__libc_start_main@GLIBC_2.2.5>
+  40047e:	f4                   	hlt    
+```
+So lets set a break point in `_start` and take a look at the registers, in 
+particular I'd like to see the value of `rip` and `rsp`:
+```console
+(gdb) br _start
+(gdb) r
+(gdb) disassemble 
+Dump of assembler code for function _start:
+=> 0x0000000000400450 <+0>:	endbr64 
+   0x0000000000400454 <+4>:	xor    %ebp,%ebp
+   0x0000000000400456 <+6>:	mov    %rdx,%r9
+   0x0000000000400459 <+9>:	pop    %rsi
+   0x000000000040045a <+10>:	mov    %rsp,%rdx
+   0x000000000040045d <+13>:	and    $0xfffffffffffffff0,%rsp
+   0x0000000000400461 <+17>:	push   %rax
+   0x0000000000400462 <+18>:	push   %rsp
+   0x0000000000400463 <+19>:	mov    $0x4005e0,%r8
+   0x000000000040046a <+26>:	mov    $0x400570,%rcx
+   0x0000000000400471 <+33>:	mov    $0x400540,%rdi
+   0x0000000000400478 <+40>:	callq  *0x200b6a(%rip)        # 0x600fe8
+   0x000000000040047e <+46>:	hlt    
+End of assembler dump.
+```
+So lets show the registers:
+```console
+(gdb) info registers 
+rax            0x7ffff7ffdfa0      140737354129312
+rbx            0x0                 0
+rcx            0x7fffffffd6e8      140737488344808
+rdx            0x7ffff7de3f00      140737351925504
+rsi            0x1                 1
+rdi            0x7ffff7ffe150      140737354129744
+rbp            0x0                 0x0
+rsp            0x7fffffffd6d0      0x7fffffffd6d0
+r8             0x7ffff7ffe6e8      140737354131176
+r9             0x0                 0
+r10            0x7                 7
+r11            0x2                 2
+r12            0x400450            4195408
+r13            0x7fffffffd6d0      140737488344784
+r14            0x0                 0
+r15            0x0                 0
+rip            0x400450            0x400450 <_start>
+eflags         0x202               [ IF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+es             0x0                 0
+fs             0x0                 0
+gs             0x0                 0
+```
+So notice that `rbp` is `0x0` and the `rip` points to the first instruction
+in _start.
