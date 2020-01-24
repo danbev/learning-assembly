@@ -1067,19 +1067,43 @@ Advanded RISC Machines (ARM) design RISC processors.
 
 Intel use complex instruction set computer (CISC)
 
+### NASM
+Has pseudo instructions to declare initialized data in the output file.
+```
+DB (define byte) 1 byte  (8 bits)
+DW (define word) 2 bytes (16 bits)
+DD               4 bytes (32 bits)
+DQ               8 bytes (64 bits)
+DT              10 bytes (80 bits)
+DO              16 bytes (128 bits)             
+DY              32 bytes (256 bits)
+DZ              64 bytes (512 bits)
+```
+
+To declare uninitialized data, which ends up in the .bss section there are
+RESB, RESW, RESW, etc just like for initialized data above.
 
 ### Single Instruction Multiple Data (SIMD)
-We know we can add two numbers together using the add operator. We can consider this a Single Instruction Single Data (SISD).
+We know we can add two numbers together using the add operator. We can consider
+this a Single Instruction Single Data (SISD).
 ```
 int a[] = {0, 1, 2, 3, 4, 5, 6, 7}
 int b[] = {0, 1, 2, 3, 4, 5, 6, 7}
 int sum = a[1] + b[1] + a[2] + b[2] ...
 ```
-So we want a single instruction to operate on multiple data (the arrays), so an instruction could be
-add a, b
-And would operator on the entire a and b and sum them.
-SIMD computing element performs the same operation on multiple data items simultaneously.
-x86’s first SIMD extension, which is called MMX technology.
+So we want a single instruction to operate on multiple data (the arrays), so an
+instruction could be `add a, b`.
+And would operate on the entire a and b and sum them.
+
+Think about this situation. We can copy (mov) a value of a specific size to
+a memory location:
+```asm
+
+```
+
+
+SIMD computing element performs the same operation on multiple data items
+simultaneously.  x86’s first SIMD extension, which is called MMX technology.
 
 MMX technology adds eight 64-bit registers to the core x86-32 platform:
 ```
@@ -1478,6 +1502,92 @@ gs             0x0                 0
 ```
 So notice that `rbp` is `0x0` and the `rip` points to the first instruction
 Tin _start.
+
+
+
+### Alignment
+This section tries to explain the need for memory alignment. Different computer
+architectures have different requirements and some might not even be able to
+handle unaligned memory accesses, while others might have to perform inefficient
+operations to handle them which incurs a performance penaltiy.
+
+So for a word size (2 bytes, 16 bits):
+```
+Address hex    binary    
+0000 0000    0000 0000      Divisable by 2    
+0000 0001    0000 0001      Hex values: 0, 4, 8, a, c, e
+----------------------      Bin value: least significant bit 0
+0000 0002    0000 0010
+0000 0003    0000 0011
+----------------------
+0000 0004    0000 0100
+0000 0005    0000 0101
+----------------------
+0000 0006    0000 0110
+0000 0007    0000 0111
+----------------------
+0000 0008    0000 1000
+0000 0009    0000 1001
+----------------------
+0000 000a    0000 1010
+0000 000b    0000 1011
+----------------------
+0000 000c    0000 1100
+0000 000d    0000 1101
+----------------------
+0000 000e    0000 1110
+0000 000f    0000 1111
+----------------------
+0000 0010    0001 0000
+0000 0011    0001 0001
+```
+
+```
+byte:        1 byte   8 bits
+word:        2 bytes 16 bits
+double word  4 bytes 32 bits
+quint word   8 bytes 64 bits
+```
+These are the sizes that the cpu can read from memory, so it can read 1 byte,
+2 bytes, 4 bytes, 8 bytes, etc.
+
+Lets say we have data type of double word, which will take up 2 bytes:
+```
+section .data
+  nr dw 10
+...
+
+  push rbp
+  mov rbp, rsp
+  mov ax, [nr]
+```
+The above example can be found in [align.asm](./nasm/linux/align.asm).
+Notice that the instruction is `mov` and it operates on a specific size, the
+size of register `ax` is 16 bits which matches our variable `nr` size.
+
+The CPU does not read from or write to memory one byte at a time, but instead
+it accesses memory in 2, 4, 8, 16, or 32 memory chunks at a time.
+
+
+
+When we want to read the value of this memory location into a register, the
+cpu must take the virtual address to look up the physical address. This does
+not happen directly but goes through the OS and its page tables and the also
+via the hardware's lookaside table (TLB). But I think the main concern here
+is that if we place data starting a memory locations that are evenly divisable
+by the size of the type we are storing, the types will fit 
+
+
+Random-access memory (RAM) is a well-known type of memory and is so-called
+because of its ability to access any location in memory with roughly the same
+time delay.
+Dynamic Random Access Memory (DRAM) is a specific type of random access memory
+that allows for higher densities at a lower cost. 
+
+The storage cell in DRAM consists of two components, a transistor and a capacitator.
+```
+TODO
+```
 
 
 
