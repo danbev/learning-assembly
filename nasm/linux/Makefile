@@ -1,5 +1,5 @@
 hello: hello.o
-	gcc -o $@ $< -no-pie
+	ld -no-pie -e main -o $@ $<
 
 hello.o: hello.asm
 	nasm -f elf64 -g -F dwarf -o $@ $<
