@@ -1624,5 +1624,26 @@ is where the `D` comes from.
 TODO
 ```
 
+### Load Affective Address (lea)
+```console
+section .data
+  msg db "hello world",0
+  fmt db "Using printf to write: %s", 10, 0
+
+section .text
+  mov rdi, fmt
+  lea rdi, [fmt]
+```
+The `mov` and the `lea` instruction above are equivalent. lea loads the address
+instead of the value, like `&` in c/c++.
+```console
+(gdb) disassemble 
+Dump of assembler code for function main:
+   0x00000000004005a0 <+0>:	push   %rbp
+   0x00000000004005a1 <+1>:	mov    %rsp,%rbp
+   0x00000000004005a4 <+4>:	movabs $0x601030,%rdi
+=> 0x00000000004005ae <+14>:	lea    0x601030,%rdi
+```
+
 
 
