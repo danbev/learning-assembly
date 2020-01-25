@@ -16,6 +16,18 @@ function: function.o
 function.o: function.asm
 	nasm -f elf64 -g -F dwarf -o $@ $<
 
+simd-intro: simd-intro.o
+	gcc -o $@ $< -no-pie
+
+simd-intro.o: simd-intro.asm
+	nasm -f elf64 -g -F dwarf -o $@ $<
+
+align: align.o
+	gcc -o $@ $< -no-pie
+
+align.o: align.asm
+	nasm -f elf64 -g -F dwarf -o $@ $<
+
 clean:
 	$(info "cleaning...")
 	rm -rf hello printf function
