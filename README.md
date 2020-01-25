@@ -1541,15 +1541,8 @@ Address hex    binary
 0000 0010    0001 0000
 0000 0011    0001 0001
 ```
-
-```
-byte:        1 byte   8 bits
-word:        2 bytes 16 bits
-double word  4 bytes 32 bits
-quint word   8 bytes 64 bits
-```
-These are the sizes that the cpu can read from memory, so it can read 1 byte,
-2 bytes, 4 bytes, 8 bytes, etc.
+So some architectures might crash or handle a memory access inefficiently if
+we were to store a value on an unaligned memory address.
 
 Lets say we have data type of double word, which will take up 2 bytes:
 ```
@@ -1565,10 +1558,50 @@ The above example can be found in [align.asm](./nasm/linux/align.asm).
 Notice that the instruction is `mov` and it operates on a specific size, the
 size of register `ax` is 16 bits which matches our variable `nr` size.
 
-The CPU does not read from or write to memory one byte at a time, but instead
-it accesses memory in 2, 4, 8, 16, or 32 memory chunks at a time.
+The instruction to read the value will look like this:
+```
+0x0000000000400544 <+4>:	mov    0x60101c,%ax
+``
+```console
+(gdb) x/x 0x60101c
+0x60101c <nr>:	0x0000000a
+```
+Notice that the address `0x60101c` least significant bit is `c` which we 
+saw above means that it is aligned. What if we add a single byte value, 
+before it? 
+```console
+section .data
+  dummy db 3
+  nr dw 10
+```
+```console
+=> 0x0000000000400544 <+4>:	mov    0x60101d,%ax
+(gdb) x/x 0x60101d
+0x60101d <nr>:	0x0000000a
+```
+So we can see that this is no longer aligned.
 
+The CPU always reads using its word size, so on a 64 bit system that would be
+word size of 8 bytes.
 
+So `0x60101c` this will be a virtual memory address which will be translated
+into a physical address (using page tables, and translation lookaside buffer)
+and then the memory controller selects the RAM chip corresponding to that
+address.
+
+I've had some trouble actually understanding this alignment requirement when
+reading various resources on the internet. Some sound like the CPU is trying to
+read a certain data type, like it is actually trying to read 1, 2, 3, or 4 bytes,
+but the size of data read is always the size of the data bus. On my system that
+would be 8 bytes (64 bits). 64 bits will always read. But the address we put
+on the address bus is the start of the memory location that we want to read from
+and then a number of following bytes (unless we are only requesting a single byte)
+In the case above we are reading one more byte. Now, if it happens that our
+address is the last byte of an address row the CPU would have to read another
+row and then shift the bits into the value placed on the data bus. But if we
+place the value on a starting address that is divisable by the type's size then
+the above situation will not happen.
+be read but this 
 
 When we want to read the value of this memory location into a register, the
 cpu must take the virtual address to look up the physical address. This does
@@ -1585,6 +1618,8 @@ Dynamic Random Access Memory (DRAM) is a specific type of random access memory
 that allows for higher densities at a lower cost. 
 
 The storage cell in DRAM consists of two components, a transistor and a capacitator.
+The capacitator leaks and needs to be refreshed which is called dynamic which
+is where the `D` comes from.
 ```
 TODO
 ```
