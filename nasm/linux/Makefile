@@ -16,6 +16,12 @@ function: function.o
 function.o: function.asm
 	nasm -f elf64 -g -F dwarf -o $@ $<
 
+func-args: func-args.o
+	gcc -o $@ $< -no-pie
+
+func-args.o: func-args.asm
+	nasm -f elf64 -g -F dwarf -o $@ $<
+
 simd-intro: simd-intro.o
 	gcc -o $@ $< -no-pie
 
@@ -27,6 +33,7 @@ align: align.o
 
 align.o: align.asm
 	nasm -f elf64 -g -F dwarf -o $@ $<
+
 
 clean:
 	$(info "cleaning...")
