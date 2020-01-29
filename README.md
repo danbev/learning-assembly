@@ -1645,5 +1645,188 @@ Dump of assembler code for function main:
 => 0x00000000004005ae <+14>:	lea    0x601030,%rdi
 ```
 
+### Global Offset Table (GOT)
+Sections starting with `.got` contains tables.
+
+### Proceedure Linkage Table (PLT)
+
+
+Sections starting with `.plt` contains stubs.
+
+```console
+40063f:       e8 fc fe ff ff          callq  400540 <lib_doit@plt>            
+```
+```console
+0000000000400540 <lib_doit@plt>:                                                
+  400540:       ff 25 d2 0a 20 00       jmpq   *0x200ad2(%rip)        # 601018 <lib_doit>
+  400546:       68 00 00 00 00          pushq  $0x0                             
+  40054b:       e9 e0 ff ff ff          jmpq   400530 <.plt>                    
+```
+So notice that we are jumping to *0x200ad2(%rip) 
+```console
+$ readelf -r main
+Relocation section '.rela.plt' at offset 0x4f8 contains 1 entry:                
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+000000601018  000400000007 R_X86_64_JUMP_SLO 0000000000000000 lib_doit + 0   
+```
+R_X86_64_JUMP_SLO is a jump slot type and the offset gives an address in the
+PLT where the effective address of the function will be.
+
+
+### libsample
+```console
+$ gcc -m64 -no-pie -g -o libsample libsample.c
+```
+```console
+$ readelf --section-headers libsample.o -W
+[12] .plt              PROGBITS        00000000004004c0 0004c0 000030 10  AX  0   0 16
+
+[21] .got              PROGBITS        0000000000600fe0 000fe0 000020 08  WA  0   0  8
+[22] .got.plt          PROGBITS        0000000000601000 001000 000028 08  WA  0   0  8
+```
+
+```console
+$ gdb libsample
+(gdb) disass main
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x00000000004005d6 <+0>:	push   %rbp
+   0x00000000004005d7 <+1>:	mov    %rsp,%rbp
+   0x00000000004005da <+4>:	sub    $0x10,%rsp
+   0x00000000004005de <+8>:	mov    %edi,-0x4(%rbp)
+   0x00000000004005e1 <+11>:	mov    %rsi,-0x10(%rbp)
+   0x00000000004005e5 <+15>:	mov    $0x400698,%edi
+   0x00000000004005ea <+20>:	callq  0x4004d0 <puts@plt>
+   0x00000000004005ef <+25>:	mov    $0x0,%edi
+   0x00000000004005f4 <+30>:	callq  0x4004e0 <exit@plt>
+End of assembler dump.
+(gdb) break *0x00000000004005ea 
+(gdb) si
+0x00000000004004d0 in puts@plt ()
+(gdb) x/i $pc
+=> 0x4004d0 <puts@plt>:	jmpq   *0x200b42(%rip)        # 0x601018 <puts@got.plt>
+
+(gdb) x/dx 0x601018
+0x601018 <puts@got.plt>:	0x004004d6
+```
+So we can see that this will jump to an entry in the .got.plt section.
+```console
+(gdb) info symbol 0x004004d6
+puts@plt + 6 in section .plt of libsample
+
+```
+```console
+(gdb) disassemble 
+Dump of assembler code for function puts@plt:
+=> 0x00000000004004d0 <+0>:	jmpq   *0x200b42(%rip)        # 0x601018 <puts@got.plt>
+   0x00000000004004d6 <+6>:	pushq  $0x0
+   0x00000000004004db <+11>:	jmpq   0x4004c0
+End of assembler dump.
+```
+Lets take a look at what the address of the function in 0x601018 is:
+```console
+(gdb) x/xg 0x601018
+0x601018 <puts@got.plt>:	0x00000000004004d6
+```
+Notice that the address is the line following the current instruction: 
+```
+   0x00000000004004d0 <+0>:	jmpq   *0x200b42(%rip)        # 0x601018 <puts@got.plt>
+=> 0x00000000004004d6 <+6>:	pushq  $0x0
+   0x00000000004004db <+11>:	jmpq   0x4004c0
+```
+So, that will be the function(address) that will be jumped to. Later, this entry
+will be patched/updated to contain the address of the puts function once it has
+been resolved.
+
+Lets step into this function and see what happens
+```console
+(gdb) si
+0x00000000004004d6 in puts@plt ()
+(gdb) disassemble 
+Dump of assembler code for function puts@plt:
+   0x00000000004004d0 <+0>:	jmpq   *0x200b42(%rip)        # 0x601018 <puts@got.plt>
+=> 0x00000000004004d6 <+6>:	pushq  $0x0
+   0x00000000004004db <+11>:	jmpq   0x4004c0
+End of assembler dump.
+```
+Alright, so we jumped to the next line. 
+This is first time this program calls `puts` so there is no entry in the got
+for it, it has to be resolved. This is handled by a resolver. First the slot
+in the got is pushed onto the stack and then we jump to the resolver code.
+```console
+=> 0x00000000004004d6 <+6>:	pushq  $0x0
+   0x00000000004004db <+11>:	jmpq   0x4004c0
+(gdb) si
+(gdb) si
+(gdb) x/2i $pc
+=> 0x4004c0:	pushq  0x200b42(%rip)        # 0x601008
+   0x4004c6:	jmpq   *0x200b44(%rip)        # 0x601010
+```
+So we can see that we are pushing the address 0x601008 onto the stack:
+```console
+(gdb) info symbol 0x601008
+_GLOBAL_OFFSET_TABLE_ + 8 in section .got.plt of libsample
+````
+So this is an entry in the global offset table.
+Then we jump to `0x601010`:
+```console
+(gdb) x/wg 0x601010
+0x601010:	0x00007ffff7dea140
+```
+(gdb) si
+(gdb) si
+0x00007ffff7dea140 in _dl_runtime_resolve_xsavec () from /lib64/ld-linux-x86-64.so.2
+(gdb) disassemble
+Dump of assembler code for function _dl_runtime_resolve_xsavec:
+=> 0x00007ffff7dea140 <+0>:	endbr64 
+   0x00007ffff7dea144 <+4>:	push   %rbx
+   0x00007ffff7dea145 <+5>:	mov    %rsp,%rbx
+   0x00007ffff7dea148 <+8>:	and    $0xffffffffffffffc0,%rsp
+   0x00007ffff7dea14c <+12>:	sub    0x2125f5(%rip),%rsp        # 0x7ffff7ffc748 <_rtld_local_ro+168>
+   0x00007ffff7dea153 <+19>:	mov    %rax,(%rsp)
+   0x00007ffff7dea157 <+23>:	mov    %rcx,0x8(%rsp)
+   0x00007ffff7dea15c <+28>:	mov    %rdx,0x10(%rsp)
+   0x00007ffff7dea161 <+33>:	mov    %rsi,0x18(%rsp)
+   0x00007ffff7dea166 <+38>:	mov    %rdi,0x20(%rsp)
+   0x00007ffff7dea16b <+43>:	mov    %r8,0x28(%rsp)
+   0x00007ffff7dea170 <+48>:	mov    %r9,0x30(%rsp)
+   0x00007ffff7dea175 <+53>:	mov    $0xee,%eax
+   0x00007ffff7dea17a <+58>:	xor    %edx,%edx
+   0x00007ffff7dea17c <+60>:	mov    %rdx,0x250(%rsp)
+   0x00007ffff7dea184 <+68>:	mov    %rdx,0x258(%rsp)
+   0x00007ffff7dea18c <+76>:	mov    %rdx,0x260(%rsp)
+   0x00007ffff7dea194 <+84>:	mov    %rdx,0x268(%rsp)
+   0x00007ffff7dea19c <+92>:	mov    %rdx,0x270(%rsp)
+   0x00007ffff7dea1a4 <+100>:	mov    %rdx,0x278(%rsp)
+   0x00007ffff7dea1ac <+108>:	xsavec 0x40(%rsp)
+   0x00007ffff7dea1b1 <+113>:	mov    0x10(%rbx),%rsi
+   0x00007ffff7dea1b5 <+117>:	mov    0x8(%rbx),%rdi
+   0x00007ffff7dea1b9 <+121>:	callq  0x7ffff7de33b0 <_dl_fixup>
+   0x00007ffff7dea1be <+126>:	mov    %rax,%r11
+   0x00007ffff7dea1c1 <+129>:	mov    $0xee,%eax
+   0x00007ffff7dea1c6 <+134>:	xor    %edx,%edx
+   0x00007ffff7dea1c8 <+136>:	xrstor 0x40(%rsp)
+   0x00007ffff7dea1cd <+141>:	mov    0x30(%rsp),%r9
+   0x00007ffff7dea1d2 <+146>:	mov    0x28(%rsp),%r8
+   0x00007ffff7dea1d7 <+151>:	mov    0x20(%rsp),%rdi
+   0x00007ffff7dea1dc <+156>:	mov    0x18(%rsp),%rsi
+   0x00007ffff7dea1e1 <+161>:	mov    0x10(%rsp),%rdx
+   0x00007ffff7dea1e6 <+166>:	mov    0x8(%rsp),%rcx
+   0x00007ffff7dea1eb <+171>:	mov    (%rsp),%rax
+   0x00007ffff7dea1ef <+175>:	mov    %rbx,%rsp
+   0x00007ffff7dea1f2 <+178>:	mov    (%rsp),%rbx
+   0x00007ffff7dea1f6 <+182>:	add    $0x18,%rsp
+   0x00007ffff7dea1fa <+186>:	bnd jmpq *%r11
+End of assembler dump.
+[_dl_runtime_resolve_xsavec](https://github.molgen.mpg.de/git-mirror/glibc/blob/master/sysdeps/x86_64/dl-trampoline.h) is where I think this code if coming from. 
+TODO: figure out how this works.
+Remember that we pushed...
+
+
+
+
+
+
+
 
 
