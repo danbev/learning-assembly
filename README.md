@@ -1820,11 +1820,81 @@ Dump of assembler code for function _dl_runtime_resolve_xsavec:
 End of assembler dump.
 [_dl_runtime_resolve_xsavec](https://github.molgen.mpg.de/git-mirror/glibc/blob/master/sysdeps/x86_64/dl-trampoline.h) is where I think this code if coming from. 
 TODO: figure out how this works.
-Remember that we pushed...
+Remember that we pushed `0x601008` onto the stack
+```console
+(gdb) x/wg 0x601008
+0x601008:	0x00007ffff7ffe150
+(gdb) x/wg $rsp
+0x7fffffffd4b8:	0x00007ffff7ffe150
+```
+
+The `endbr64` instruction is used for branch protection. TOOD: add section about
+this.
 
 
+byte             8   bits    char 
+word             16  bits    short
+double word      32  bits    int/long
+quad word        64  bits    double/long long
+double quad word 128 bits    
 
+x86_64 is because Intel has had a number of chips like 8086, 80186, 80286, 80386
+etc.  So this is just a naming convention.
 
+A single hexadecimal character is essentially a nibble (4 bits)
+0000  0x0
+0001  0x1
+0010  0x2
+0011  0x3
+0100  0x4
+0101  0x5
+0110  0x6
+0111  0x7
+1000  0x8
+1001  0x9
+1010  0xa
+1011  0xb
+1100  0xc
+1101  0xd
+1110  0xe
+1111  0xf
+
+Upon entering a function the topmost entry in the stack will be the return
+address
+```console
+10    +----------+  
+      | ret addr |
+08    +----------+
+      | [rbp]    | the base pointer of the previous function
+06    +----------+ <-- rsp <-- rbp (after moving the current rsp into it
+      |          |
+04    +----------+
+      |          |
+02    +----------+
+      |          |
+00    +----------+
+```
+
+Now, if we push two local variable it would be pushed onto the stack and rsp
+would be incremented:
+```console
+10    +----------+  
+      | ret addr |
+08    +----------+
+      | [rbp]    | the base pointer of the previous function
+06    +----------+ <-- rbp (after moving the current rsp into it
+      |    5     |
+04    +----------+ 
+      |    6     |
+02    +----------+ <-- rsp
+      |          |
+00    +----------+
+```
+Now, we can see that if we want to refer to the local variable containing 6 we
+can use rbp-4.
+If we wanted to inspect the return address that would be rbp+4.
+I'm just trying to build some intuition around how the stack is organized as I
+still find I have stop and think about this when reading assembly code.
 
 
 
