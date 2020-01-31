@@ -1897,6 +1897,212 @@ I'm just trying to build some intuition around how the stack is organized as I
 still find I have stop and think about this when reading assembly code.
 
 
+### stackover flow
+```console
+$ gcc -g -o stacko stackoverflow
 
+Lets go over generated assembly code to fully understand what is happeningÖ
+```console
+$ gdb --args stacko bajja
+(gdb)  disassemble main
+Dump of assembler code for function main:
+   0x000000000040060e <+0>:	push   %rbp
+   0x000000000040060f <+1>:	mov    %rsp,%rbp
+   0x0000000000400612 <+4>:	sub    $0x10,%rsp
+   0x0000000000400616 <+8>:	mov    %edi,-0x4(%rbp)
+   0x0000000000400619 <+11>:	mov    %rsi,-0x10(%rbp)
+=> 0x000000000040061d <+15>:	mov    -0x10(%rbp),%rax
+   0x0000000000400621 <+19>:	add    $0x8,%rax
+   0x0000000000400625 <+23>:	mov    (%rax),%rax
+   0x0000000000400628 <+26>:	mov    %rax,%rdi
+   0x000000000040062b <+29>:	callq  0x4005d6 <func>
+   0x0000000000400630 <+34>:	mov    $0x0,%eax
+   0x0000000000400635 <+39>:	leaveq
+   0x0000000000400636 <+40>:	retq
+```
+First we have the prolouge which I think we understand by now.
 
+```assembly
+  sub    $0x10,%rsp
+```
+This subtracting rsp by 16 making room for local variables.
 
+```assembly
+  mov    %edi, -0x4(%rbp)
+```
+Notice that this is edi, so this is moving a word (16 bits) from edi into
+the local variable.
+```console
+(gdb) x/xw $rbp-4
+   0x7fffffffd3ec:	0x00000002
+```
+So edi contained the number of arguments. Note that I started this
+with `gdb --args stacko bajja`.`
+This will move the contents of edi into the local variables on the stack.
+```assembly
+   mov    %rsi, -0x10(%rbp)
+```
+Remember that ths size of the register in this case is a quad word/giant
+word which is 64 bits. And also note that 10 is 16 in dec which we will use
+below:
+```console
+(gdb) x/xg $rbp-16
+  0x7fffffffd3e0:	0x00007fffffffd4d8
+(gdb) x/xg 0x00007fffffffd4d8
+  0x7fffffffd4d8:	0x00007fffffffd865
+(gdb) x/b 0x00007fffffffd865
+  0x7fffffffd865:	"/home/dbeveniu/work/assembler/learning-assembly/nasm/linux/stacko"
+```
+So we can see that this is the char** and the first pointer is the name of the
+executable. We should also be able to see the argument we passed:
+```console
+(gdb) x/xg 0x00007fffffffd4d8+8
+  0x7fffffffd4e0:	0x00007fffffffd8a7
+(gdb) x/s 0x00007fffffffd8a7
+  0x7fffffffd8a7:	"bajja"
+```
+
+```assembly
+  mov    -0x10(%rbp),%rax
+```
+This is argv that we are copying into the rax register.
+```assembly
+  add    $0x8,%rax
+```
+This is adding to the value in rax so that is is pointing to the second 
+char* in argv:
+```console
+(gdb) x/xg $rbp - 16
+    0x7fffffffd3e0:	0x00007fffffffd4d8
+(gdb) x/xg 0x00007fffffffd4d8
+    0x7fffffffd4d8:	0x00007fffffffd865
+(gdb) x/xg 0x00007fffffffd4d8 + 8
+    0x7fffffffd4e0:	0x00007fffffffd8a7
+(gdb) x/s 0x00007fffffffd8a7
+    0x7fffffffd8a7:	"bajja"
+```
+```assembly
+  mov    (%rax),%rax
+```
+This is moving the value contained in rax into rax, it is dereferencing 
+the pointer and placing the address to the value in rax.
+```console
+(gdb) i r rax
+    rax            0x7fffffffd8a7      140737488345255
+(gdb) x/s 0x7fffffffd8a7
+    0x7fffffffd8a7:	"bajja"
+```
+```assembly
+  mov    %rax,%rdi
+```
+Remember that rdi is used as the register for first arguments so we copy
+rax into rdi.
+
+After this we have the `callq` instruction which will call `func`.
+```console
+(gdb) br *0x00000000004005da
+```
+Notice the `*` that we use to set a break point on an address.
+
+```console
+(gdb) si
+   Dump of assembler code for function func:
+   0x00000000004005d6 <+0>:	push   %rbp
+   0x00000000004005d7 <+1>:	mov    %rsp,%rbp
+=> 0x00000000004005da <+4>:	add    $0xffffffffffffff80,%rsp
+```
+0xffffffffffffff80 is -128 in hex, so this is making room for 128 bytes of
+local variables.
+So after this instruction rsp will have been subtracted by 128 bytes.
+```
+0x7fffffffd4b0  - 128 = 0x7fffffffd430 
+140737488344240 - 128 = 140737488344112
+```
+At the moment there is only garbage in this space but lets list it so we know
+how:
+```console
+(gdb) x/130b $rsp
+0x7fffffffd430:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd438:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd440:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd448:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd450:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd458:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd460:	0x09	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd468:	0xff	0xb5	0xf0	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd470:	0xc2	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd478:	0xa6	0xd4	0xff	0xff	0xff	0x7f	0x00	0x00
+0x7fffffffd480:	0x01	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd488:	0x85	0x4a	0xab	0xf7	0xff	0x7f	0x00	0x00
+0x7fffffffd490:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd498:	0x8d	0x06	0x40	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd4a0:	0x00	0x3f	0xde	0xf7	0xff	0x7f	0x00	0x00
+0x7fffffffd4a8:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd4b0:	0xd0	0xd4
+```
+We are using 130 as the length just so that we can see that we are showing all
+bytes from the current rsp (0x7fffffffd430) to the old rsp (0x7fffffffd4b0).
+
+```assembly
+  mov    %rdi,-0x78(%rbp)
+```
+Now, rpb is `0x7fffffffd4b0` which is the value of the old rsp which makes sense.
+And we can see that if we subtract 120 from rp
+140737488344240 - 120 = 140737488344120 (hex 7FFFFFFFD438)
+So after that instruction we can see the stack again
+```console
+  0x7fffffffd430:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
++→0x7fffffffd438:	0x75	0xd9	0xff	0xff	0xff	0x7f	0x00	0x00
+| 0x7fffffffd440:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd448:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd450:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd458:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd460:	0x09	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd468:	0xff	0xb5	0xf0	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd470:	0xc2	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd478:	0xa6	0xd4	0xff	0xff	0xff	0x7f	0x00	0x00
+| 0x7fffffffd480:	0x01	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd488:	0x85	0x4a	0xab	0xf7	0xff	0x7f	0x00	0x00
+| 0x7fffffffd490:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd498:	0x8d	0x06	0x40	0x00	0x00	0x00	0x00	0x00
+| 0x7fffffffd4a0:	0x00	0x3f	0xde	0xf7	0xff	0x7f	0x00	0x00
+| 0x7fffffffd4a8:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
++-0x7fffffffd4b0:	0xd0	0xd4
+```
+And we can read that location using:
+```console
+(gdb) x/xg 0x7fffffffd438
+0x7fffffffd438:	0x00007fffffffd975
+(gdb) x/s 0x00007fffffffd975
+0x7fffffffd975:	"bajja"
+```
+So we can see that we have placed a pointer to `bajja` onto that stack location.
+
+```assembly
+  mov    -0x78(%rbp),%rdx
+```
+So now we copy that value into rdx.
+
+```assembly
+  lea    -0x70(%rbp),%rax
+```
+And then we store the address in rax.
+```console
+(gdb) i r rax
+  rax            0x7fffffffd360      140737488343904
+```
+```assembly
+  mov %rax, %rdi    this is the first argument to strcpy  (dst)
+  mov %rdx, %rsi    this is the second argument to strcpy (src)
+```
+Just recall the the signature of `strcpy` is :
+```c
+  char *strcpy(char* dest, const char* src);
+```
+Next, we have our call to strcpy which is using the plt which we've gone through
+above.
+```assembly
+  callq  0x4004d0 <strcpy@plt>
+```
+```console
+$ gdb --args stacko $(python3 -c 'print("\x41" * 120 + "\x42" * 4 + "\x43" * 4)')
