@@ -2117,7 +2117,7 @@ the code. If you just disassemble main you will not see the code.
 Run make and reload file from inside gdb:
 ```console
 (gdb) make jnz
-(gdb) load jnz
+(gdb) r
 ```
 
 Run shell command:
