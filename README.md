@@ -2106,3 +2106,8 @@ above.
 ```
 ```console
 $ gdb --args stacko $(python3 -c 'print("\x41" * 120 + "\x42" * 4 + "\x43" * 4)')
+
+
+### jumps
+Note that when you have a label you need to use `disassemble label` to see
+the code. If you just disassemble main you will not see the code.

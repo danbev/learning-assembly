@@ -34,6 +34,17 @@ align: align.o
 align.o: align.asm
 	nasm -f elf64 -g -F dwarf -o $@ $<
 
+half-adder: half-adder.o
+	gcc -o $@ $< -no-pie
+
+half-adder.o: half-adder.asm
+	nasm -f elf64 -g -F dwarf -o $@ $<
+
+jnz: jnz.o
+	gcc -o $@ $< -no-pie
+
+jnz.o: jnz.asm
+	nasm -f elf64 -g -F dwarf -o $@ $<
 
 clean:
 	$(info "cleaning...")
