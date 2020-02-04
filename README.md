@@ -146,6 +146,8 @@ REX.W addq rsp,0x38
 The stack consists of memory area for parameters, local variables, and the
 return address (sometimes return values depending on the calling conventions
 which might dictate that return values be passed in registers.
+But this is still just ram memory, like the heap, the .data section, and the
+.text/code section. 
 
 System V AMD64 calling conventions:
 ```
@@ -1900,8 +1902,30 @@ still find I have stop and think about this when reading assembly code.
 ### stackover flow
 ```console
 $ gcc -g -o stacko stackoverflow
+```
 
-Lets go over generated assembly code to fully understand what is happeningÖ
+Just a note about this example and trying this out. We need to invoke the
+program in the same way in both the terminal and from gdb. Things like environ
+variable differences, and the path of the executable will affect the addresses
+in the running program. 
+
+The environment can be unset using:
+```console
+$ env - ./stacko bajja
+```
+And when using gdb:
+```consle
+$ env - gdb --args
+(gdb) show env
+(gdb) show env
+LINES=48
+COLUMNS=94
+(gdb) unset env LINES
+(gdb) unset env COLUMNS
+```
+
+
+Lets go over generated assembly code to fully understand what is happening:
 ```console
 $ gdb --args stacko bajja
 (gdb)  disassemble main
