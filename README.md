@@ -1612,6 +1612,11 @@ via the hardware's lookaside table (TLB). But I think the main concern here
 is that if we place data starting a memory locations that are evenly divisable
 by the size of the type we are storing, the types will fit 
 
+The stack pointer must be aligned to a 16-byte boundry before making a call. When
+the `call` instructions is executed it will push the return address (value in rip)
+onto the stack. This will be 8 bytes that are on the stack after which the stack
+is not alligned. We can either subtract 8 bytes from rsp, or we can push rbp which
+will also subtract 8 from rsp making it aligned.
 
 Random-access memory (RAM) is a well-known type of memory and is so-called
 because of its ability to access any location in memory with roughly the same
