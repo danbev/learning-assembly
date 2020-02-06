@@ -2128,9 +2128,83 @@ above.
 ```assembly
   callq  0x4004d0 <strcpy@plt>
 ```
-```console
-$ gdb --args stacko $(python3 -c 'print("\x41" * 120 + "\x42" * 4 + "\x43" * 4)')
 
+Now, lets change the argument to the program from `bajja` to a few longer strings
+and try to overwrite the return address on the stack.
+```console
+$ env - gdb --args stacko $(python3 -c 'print("\x41" * 100 + "\x42" * 8 + "\x43" * 8)')
+(gdb) unset env LINES
+(gdb) unset env COLUMNS
+```
+
+Now, we need to look at what happens in this case...
+
+When we perform 
+```console
+  mov %rdi,-0x78(%rbp)
+```
+
+```console
+(gdb) x/b $rbp - 120
+0x7fffffffd3c8:	0x0e
+```
+And we can dereference this using:
+```console
+(gdb) x/xg 0x7fffffffd3c8
+0x7fffffffd3c8:	0x00007fffffffd90e
+(gdb) x/s 0x00007fffffffd90e
+0x7fffffffd90e:	'A' <repeats 100 times>, "BBBBCCCC"
+```
+
+So the second argument to strcpy which is the source to copy from:
+```console
+(gdb) x/s $rsi
+0x7fffffffd90e:	'A' <repeats 100 times>, "BBBBCCCC"
+```
+And rdi, the first argument which is the destination of the copy:
+```console
+(gdb) i r $rdi
+rdi            0x7fffffffd3d0      140737488344016
+```
+Lets see where this address is:
+```console
+(gdb) x/130x $rsp
+0x7fffffffd3c0:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd3c8:	0x0e	0xd9	0xff	0xff	0xff	0x7f	0x00	0x00
+0x7fffffffd3d0:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+0x7fffffffd3d8:	0x00	0x00	0x00	0x00	0x00	0x00	0x00	0x00
+```
+Notice this is on the stack, just after the address (pointer) to the string
+to copy.
+
+Lets find the return address, which remember is on the stack. This is the 
+value we want to overwrite.
+If we disassemble main we can see that the address of the instruction following
+the call to `func`:
+```console
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x000000000040060e <+0>:	push   %rbp
+   0x000000000040060f <+1>:	mov    %rsp,%rbp
+   0x0000000000400612 <+4>:	sub    $0x10,%rsp
+   0x0000000000400616 <+8>:	mov    %edi,-0x4(%rbp)
+   0x0000000000400619 <+11>:	mov    %rsi,-0x10(%rbp)
+   0x000000000040061d <+15>:	mov    -0x10(%rbp),%rax
+   0x0000000000400621 <+19>:	add    $0x8,%rax
+   0x0000000000400625 <+23>:	mov    (%rax),%rax
+   0x0000000000400628 <+26>:	mov    %rax,%rdi
+   0x000000000040062b <+29>:	callq  0x4005d6 <func>
+   0x0000000000400630 <+34>:	mov    $0x0,%eax
+   0x0000000000400635 <+39>:	leaveq 
+   0x0000000000400636 <+40>:	retq   
+End of assembler dump.
+```
+`0x0000000000400630` is that address. And we can get to the arguments to our
+function using rbp:
+```console
+(gdb) x/2xg $rbp
+0x7fffffffec30:	0x00007fffffffec50	0x0000000000400630
+```
 
 ### jumps
 Note that when you have a label you need to use `disassemble label` to see
@@ -2147,4 +2221,161 @@ Run make and reload file from inside gdb:
 Run shell command:
 ```console
 (gdb) !ls
+```
+
+Break on the first instruction:
+```console
+(gdb) starti
+```
+
+Break on _start:
+```console
+(gdb) b _start
+```
+This is really just breaking on a label.
+
+### Memory
+
+#### AND-OR Latch
+```
+     +---+       +---+
+-----|OR |-------|AND|-------*---- output
+     +---+       +---+
+          +---+
+----------|NOT|
+          +---+
+```
+#### Half adder
+
+
+### Time Stamp Counter
+The `rdtsc` instruction returns the Time Stamp Count (TSC) in EDX:EAX.
+
+
+### Call Frame Information (cfi)                                                
+This is a GNU AS extension to manage call frames. I some cases a function
+prologue and epilog are added to the functions stack. In these cases a debugger
+, for exception handling, or perhaps a performance tool will be able to unwind
+stack frames, that is be able to find where the call frame for the current
+function is, and also be able to go up/down the call stack.
+
+There are cases when a function prologue/epilog may not be desirable, for small
+functions it might be a performance cost, or code could be compiled with
+`-fomit-frame-pointer`.
+The compiler generates table to help with this when the prologue/epilog don't
+exist. There can be sections for this named, '.eh_frame` which is the table
+used for exception handling, `.debug_frame`. These tables are called call frame
+information tables.
+
+Canonical Frame Address(CFA) is the value of the pointer just before the `call`
+instruction in the parent frame/function. We need to be able to calculate the
+CFA for every instruction.
+
+Upon entering a function the CFA is $rsp + 8, since the call instruction pushed
+the return address (the value in $rip) onto the stack. This works when entering
+the function but as things are pushed/poped onto/off the stack rsp changes.
+So the CFA is a pair, register and an offset.
+
+Lets take a simple example to understand how this works.
+
+```console
+$ gcc -S -o simple.s -g simple.c
+```
+So since we are using gcc it will be the GNU assembler that will be used so
+the output will be in that format.
+
+```
+        .file   "simple.c"
+        .text
+        .globl  main
+        .type   main, @function
+main:
+.LFB0:
+        .cfi_startproc
+        pushq   %rbp
+        .cfi_def_cfa_offset 16
+        .cfi_offset 6, -16
+        movq    %rsp, %rbp
+        .cfi_def_cfa_register 6
+        movl    %edi, -4(%rbp)
+        movq    %rsi, -16(%rbp)
+        movl    $0, %eax
+        popq    %rbp
+        .cfi_def_cfa 7, 8
+        ret
+        .cfi_endproc
+.LFE0:
+        .size   main, .-main
+        .ident  "GCC: (GNU) 8.2.1 20180905 (Red Hat 8.2.1-3)"
+        .section        .note.GNU-stack,"",@progbits
+```
+A local label is any symbol beginning with a certain local label prefix.
+For ELF systems the prefix is `.L`. We can see above that we have local labels
+named `.LFB0`
+
+`.cfi_startproc` is used in the beginning of each function that should have
+a new CFI table.
+
+```
+        pushq   %rbp
+        .cfi_def_cfa_offset 16
+```                                                                             
+`cfi_def_cfa_offset` modifies a rule for computing CFA. Register remains the
+same, but offset is new. Is the default `rsp`?  I've found information that
+says that $rsp + 8 is the default so I'm going to assume that `rsp` is the default
+register which makes sense to me.
+
+The call frame is identified by an address on the stack. We refer to this          
+address as the Canonical Frame Address or CFA. In our case the return address was
+pushed by the caller and we have now pushed rbp so that means 8+8 bytes (16 above)
+has changed the.
+
+Next we have:
+```
+        .cfi_offset 6, -16
+```
+This is saving the register $rbp (see register number mapping below) at the
+offset -16 (it was just pushed onto the stack). I think this is saved in the
+table?
+
+Next, we have:
+```
+        movq    %rsp, %rbp
+        .cfi_def_cfa_register 6
+```
+`cfi_def_cfa_register` will make the register used for CFA register 6 (rbp) 
+from now on.
+
+```
+        ...
+        popq    %rbp
+        .cfi_def_cfa 7, 8
+```
+Notice that we pop rbp and then we set CFA to use register 7 (rsp) and offset
+8 from now on.
+
+And finally we have:
+```
+        ret
+        .cfi_endproc
+```
+And here we have the instruction to have the table emitted.
+
+We can inspect the tables using:
+```console
+$ objdump -W simple
+```
+
+
+Register number mapping:
+```
+$rax		0
+$rdx		1
+$rcx		2
+$rbx		3
+$rsi		4
+$rdi		5
+$rbp		6
+$rsp		7
+$r8-$r15	8-15
 ```
