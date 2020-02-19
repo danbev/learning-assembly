@@ -296,3 +296,15 @@ op2 - op1. None of the operands are modified but the EFLAGS reg is set as if sub
 place.
 
 
+###  Preprocessing assemler files
+Assembler files that start with a capital S indicate that the file needs to be
+preprocessed as it contains #include/#define which have to be processed. A lower
+case s assembly file is just normal assembly. 
+
+So we have to preprocess such files with `cpp`:
+```console                                                                          
+$ cpp hello.S | as -o hello.o -                                                     
+$ ld -o hello hello.o                                                               
+$ ./hello                                                                           
+Hello, world!                                                                       
+```          
