@@ -58,15 +58,15 @@ These registers are preserved/saved accross function calls.
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in
 memory and the processor runs by reading these instructions. Any data required
-by the instructions is also read/stored from memory. To keep these separate
+by the instructions are also read/stored from memory. To keep these separate
 there are two pointers to help, the instruction pointer (rip), and the data/stack
 pointer (rsp).
 
-`instruction pointer` is used to keep track of the instructions already executed
+The `instruction pointer` is used to keep track of the instructions already executed
 and the next instruction. Instructions can alter this indirectly by jumping
 which causes this pointer to move.
 
-`data pointer` is used to keep track of where the data in memory starts. This
+The `data pointer` is used to keep track of where the data in memory starts. This
 is what is referred to as the stack. When you push a new data element onto this
 stack the pointer moves down in memory.
  
@@ -77,6 +77,30 @@ When you see a `q` appended to an instruction that indicated a full quadword
 (8 bytes, 64bits), an `l` means a longword (only 4 bytes, 32bits).
 
 #### Intel Instruction format
+The maximum size of an instruction can be 15 bytes.
+
+Lets take a very simple example to understand what we are talking about:
+```
+movl  $1, %eax
+```
+
+```console
+$ objdump -d instructions
+0000000000000000 <_start>:
+   0:	b8 01 00 00 00       	mov    $0x1,%eax
+   5:	bb 00 00 00 00       	mov    $0x0,%ebx
+   a:	cd 80                	int    $0x80
+```
+The first column indicates the byte (offset?) followed by the instruction also
+in hex.
+Notice that `movl` became `mov` and that even though the instructions mnemonic
+are the same the instructions are different. So this must mean that there are
+different instructions for different registers as both of these instructions are
+using immediate instructions. And what about the empty bytes, what are they about?
+
+In this case, even though we have a 64-bit mode the immediate operand, `0x1` in
+this case, is a 32 bit value. So the movl will become mov?
+
 ```
 Instruction Prefix    Opcode       ModR/M      SIB         Displacement  Data elements
 0-4 bytes             1-3 bytes    0-1 bytes   0-1 bytes   0-4 bytes     0-4 bytes
