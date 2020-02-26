@@ -66,7 +66,7 @@ The `instruction pointer` is used to keep track of the instructions already exec
 and the next instruction. Instructions can alter this indirectly by jumping
 which causes this pointer to move.
 
-The `data pointer` is used to keep track of where the data in memory starts. This
+The `data/stack pointer` is used to keep track of where the data in memory starts. This
 is what is referred to as the stack. When you push a new data element onto this
 stack the pointer moves down in memory.
  
@@ -77,47 +77,28 @@ When you see a `q` appended to an instruction that indicated a full quadword
 (8 bytes, 64bits), an `l` means a longword (only 4 bytes, 32bits).
 
 #### Intel Instruction format
-The maximum size of an instruction can be 15 bytes.
-
-Lets take a very simple example to understand what we are talking about:
-```
-movl  $1, %eax
-```
-
-```console
-$ objdump -d instructions
-0000000000000000 <_start>:
-   0:	b8 01 00 00 00       	mov    $0x1,%eax
-   5:	bb 00 00 00 00       	mov    $0x0,%ebx
-   a:	cd 80                	int    $0x80
-```
-The first column indicates the byte (offset?) followed by the instruction also
-in hex.
-Notice that `movl` became `mov` and that even though the instructions mnemonic
-are the same the instructions are different. So this must mean that there are
-different instructions for different registers as both of these instructions are
-using immediate instructions. And what about the empty bytes, what are they about?
-
-In this case, even though we have a 64-bit mode the immediate operand, `0x1` in
-this case, is a 32 bit value. So the movl will become mov?
+The size of instructions is variable, from 1 byte to a maximum size of an 15 bytes.
 
 ```
 Instruction Prefix    Opcode       ModR/M      SIB         Displacement  Data elements
 0-4 bytes             1-3 bytes    0-1 bytes   0-1 bytes   0-4 bytes     0-4 bytes
 ```
+Opcode is the only mandatory part.
 
-Opcode is the only required part.
-
-##### Instruction Prefixes
+##### Instruction Prefix
+Are divided into 4 groups:
+###### Group 1
 * Lock and repeat  
 Indicates that any shared memory areas will be used exclusively by the
-instruction (multiprocessor systems)
+instruction (multiprocessor systems).
 
+###### Group 2
 * Segment override and branch hint  
 Segement overrides defines that instructions can override defined segment registers.
-The branch hint attempt to give the processor a clue as to the most likely path
+The branch hint attempts to give the processor a clue as to the most likely path
 the program will take in a conditional jump statement.
 
+###### Group 3
 * Operand size override  
 The operand size override prefix informs the processor that the program will
 switch between 16-bit and 32-bit operand sizes within the instruction code. 
@@ -125,8 +106,19 @@ This enables the program to warn the processor when it uses larger-sized operand
 helping to speed up the assignment of data to register
 
 * Address size  
-The address size override prefix informs the processor that the program will switch between 16-bit and 32-bit memory addresses.
+The address size override prefix informs the processor that the program will
+switch between 16-bit and 32-bit memory addresses.
 
+###### Group 4
+* REX prefix
+You may come across instructions using a REX prefix which are necessary if an
+instruction references one of the extended registers or uses a 64-bit operand.
+It is ignored if used where it does not have any meaning.
+
+For example:
+```
+REX.W addq rsp,0x38
+```
 
 ##### Modifiers
 * ModeR/M 
@@ -153,16 +145,29 @@ Mod field
 * SIB (Scale*Index+Base)
 Only available in 32-bit mode.
 
-
-### REX prefix
-You may come across instructions using a REX prefix which are necessary if an
-instruction references one of the extended registers or uses a 64-bit operand.
-It is ignored if used where it does not have any meaning.
-
-For example:
+Lets take a very simple example to understand what we are talking about:
 ```
-REX.W addq rsp,0x38
+movl  $1, %eax
 ```
+
+```console
+$ objdump -d instructions
+0000000000000000 <_start>:
+   0:	b8 01 00 00 00       	mov    $0x1,%eax
+   5:	bb 00 00 00 00       	mov    $0x0,%ebx
+   a:	cd 80                	int    $0x80
+```
+The first column indicates the start byte of a row, followed by the instruction
+also in hex.
+Notice that `movl` became [mov](http://ref.x86asm.net/coder32.html#xB8) and
+that even though the instructions mnemonic are the same the instructions are
+different. So this must mean that there are different instructions for different
+registers as both of these instructions are using immediate instructions. And
+what about the empty bytes, what are they about?
+
+In this case, even though we have a 64-bit mode the immediate operand, `0x1` in
+this case, is a 32 bit value. So the movl will become mov?
+
 
 #### Assembly Instruction format
 
