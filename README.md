@@ -1749,8 +1749,8 @@ So we can see that this will jump to an entry in the .got.plt section.
 ```console
 (gdb) info symbol 0x004004d6
 puts@plt + 6 in section .plt of libsample
-
 ```
+
 ```console
 (gdb) disassemble 
 Dump of assembler code for function puts@plt:
@@ -1765,7 +1765,7 @@ Lets take a look at what the address of the function in 0x601018 is:
 0x601018 <puts@got.plt>:	0x00000000004004d6
 ```
 Notice that the address is the line following the current instruction: 
-```
+```console
    0x00000000004004d0 <+0>:	jmpq   *0x200b42(%rip)        # 0x601018 <puts@got.plt>
 => 0x00000000004004d6 <+6>:	pushq  $0x0
    0x00000000004004db <+11>:	jmpq   0x4004c0
@@ -1808,7 +1808,6 @@ Then we jump to `0x601010`:
 ```console
 (gdb) x/wg 0x601010
 0x601010:	0x00007ffff7dea140
-```
 (gdb) si
 (gdb) si
 0x00007ffff7dea140 in _dl_runtime_resolve_xsavec () from /lib64/ld-linux-x86-64.so.2
@@ -1854,6 +1853,7 @@ Dump of assembler code for function _dl_runtime_resolve_xsavec:
    0x00007ffff7dea1f6 <+182>:	add    $0x18,%rsp
    0x00007ffff7dea1fa <+186>:	bnd jmpq *%r11
 End of assembler dump.
+```
 [_dl_runtime_resolve_xsavec](https://github.molgen.mpg.de/git-mirror/glibc/blob/master/sysdeps/x86_64/dl-trampoline.h) is where I think this code if coming from. 
 TODO: figure out how this works.
 Remember that we pushed `0x601008` onto the stack
@@ -2413,3 +2413,9 @@ $rbp		6
 $rsp		7
 $r8-$r15	8-15
 ```
+
+### Near/Far jumps
+A near jump is where a jump/call is relative to the current segment, that is
+it stays inside of the current segment. You just write jmp address
+
+When you do a far jump you specify the jmp segment:address
