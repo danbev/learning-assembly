@@ -42,3 +42,46 @@ it is zero by using the `test` opcode:
 ``` 
 So I'm thinking that this would be similar to a checking that there is a value
 or not.
+
+
+## Load Effective Address
+
+Take the following instructions:
+```
+.data
+msg:
+   .ascii "bajja\n"
+...
+
+  mov msg, %rsi
+  lea msg, %rsi
+```
+
+Now, if we take a look at `msg` it contains:
+```console
+(lldb) expr msg
+(void *) $5 = 0x00000a616a6a6162
+```
+
+This looked a little strange to me at first, but this is actually the value
+contained in the memory location:
+
+```console
+(lldb) memory read -f x -s 8 -c 1 0x0000000000402000
+0x00402000: 0x00000a616a6a6162
+
+(lldb) memory read -c 5 0x0000000000402000
+0x00402000: 62 61 6a 6a 61                                   bajja
+```
+And remember memory is read using little endian `00000a616a6a6162` which
+would then become `00000a62616a6a61`.
+```
+
+Using mov with `msg` will only copy the value `00000a616a6a6162` into a register
+for example. But to pass the msg to a function like write we would need to
+pass a pointer. For this we use the command lea which is like `&` in c/c++
+to get the address:
+```
+(lldb) expr (char*)&msg
+(char *) $26 = 0x0000000000402000 "bajja\n"
+```
