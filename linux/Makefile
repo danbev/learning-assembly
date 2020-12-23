@@ -1,8 +1,10 @@
 first: first.o
 	${LD} -o $@ $<
 
-
 check_zero: check_zero.o
+	${LD} -o $@ $<
+
+write: write.o
 	${LD} -o $@ $<
 
 %.o: %.s
@@ -10,4 +12,4 @@ check_zero: check_zero.o
 
 .PHONY: clean
 clean:
-	${RM} -f first check_zero *.o
+	${RM} -f first check_zero write *.o
