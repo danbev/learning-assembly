@@ -3,7 +3,6 @@
 msg: .ascii "bajja\n"
 len: .int . - msg
 
-
 .text
 .global _start
 
@@ -11,8 +10,10 @@ _start:
   push %rbp
   mov %rsp, %rbp
 
-  mov $0, %rcx
+  xor %rcx, %rcx
+  mov $1, %rdx
 lp: 
+  lea msg(,%rcx), %rsi
   inc %rcx
   push %rcx
   call print
@@ -29,8 +30,6 @@ print:
   mov %rsp, %rbp
   mov $1, %rax
   mov $1, %rdi
-  lea msg, %rsi
-  mov len, %rdx
   syscall
   leave
   ret
