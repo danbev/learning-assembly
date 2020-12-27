@@ -1,7 +1,12 @@
 
 .data
-msg: .ascii "bajja\n"
-len: .int . - msg
+msg: 
+  .ascii "bajja\n"
+msg_len = . - msg
+
+done:
+  .ascii "done...\n"
+done_len = . - done
 
 .text
 .global _start
@@ -18,9 +23,13 @@ lp:
   push %rcx
   call print
   pop %rcx
-  cmp len, %rcx
-  jle lp
-  
+  cmp $msg_len, %rcx
+  jl lp
+
+  lea done, %rsi
+  mov $done_len, %rdx
+  call print
+
   mov $60, %rax 
   xor %rdi, %rdi
   syscall
