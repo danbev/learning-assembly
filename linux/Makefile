@@ -7,9 +7,12 @@ check_zero: check_zero.o
 write: write.o
 	${LD} -o $@ $<
 
+jle: jle.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
 .PHONY: clean
 clean:
-	${RM} -f first check_zero write *.o
+	${RM} -f first check_zero jle write *.o
