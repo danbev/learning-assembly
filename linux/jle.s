@@ -1,12 +1,10 @@
 
 .data
-msg: 
-  .ascii "bajja\n"
-msg_len = . - msg
+msg: .ascii "bajja\n"
+msg_end: .set msg_len, msg_end - msg
 
-done:
-  .ascii "done...\n"
-done_len = . - done
+done: .ascii "done...\n"
+done_end: .set done_len, done_end - done
 
 .text
 .global _start
