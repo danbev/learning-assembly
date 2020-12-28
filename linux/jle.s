@@ -1,7 +1,7 @@
 
 .data
 msg: .ascii "bajja\n"
-msg_end: .set msg_len, msg_end - msg
+msg_len = . - msg
 
 done: .ascii "done...\n"
 done_end: .set done_len, done_end - done
