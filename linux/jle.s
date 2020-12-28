@@ -4,7 +4,7 @@ msg: .ascii "bajja\n"
 msg_len = . - msg
 
 done: .ascii "done...\n"
-done_end: .set done_len, done_end - done
+.set done_len, . - done
 
 .text
 .global _start
