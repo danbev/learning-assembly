@@ -85,3 +85,22 @@ to get the address:
 (lldb) expr (char*)&msg
 (char *) $26 = 0x0000000000402000 "bajja\n"
 ```
+
+### .set directive
+Can be used to set a memory location to a value.
+```
+msg_end: .set msg_len, msg_end - msg
+```
+If we take a look at the binary we will find:
+```
+  40102e:	48 c7 c2 08 00 00 00 	mov    $0x8,%rdx
+```
+So this works sort of like a `#define` in C/C++ which would be replaced by the
+preprocessor (not that there is one when using as). There won't be any symbol
+for msg_len.
+
+This can also be written as:
+```
+msg_len = . - msg
+```
+
