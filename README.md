@@ -51,9 +51,13 @@ r15             | r15d          | r15w          | r15b
 #### Caller saved
 These registers might be changed when making function calls and it is the
 callers responsibility to save them.
+The registers are `rax`, `rcx`, `edx`. So when calling a function if the current
+function depends on these values to. rax is used for the return value of the
+function being called, and the function being called might use rcx as a counter. 
 
 #### Callee saved
-These registers are preserved/saved accross function calls.
+These registers are preserved/saved accross function calls so if the called
+function needs to uses these registers it has to store and the restore them.
 
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in
