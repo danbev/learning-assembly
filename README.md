@@ -59,6 +59,45 @@ function being called, and the function being called might use rcx as a counter.
 These registers are preserved/saved accross function calls so if the called
 function needs to uses these registers it has to store and the restore them.
 
+### Calling Conventions
+The C calling conventions used on 32-bit x86 processor are the following:
+CDECL, STDCALL, and FASTCALL. There is additional one named THISCALL which is
+used sometimes for C++.
+
+#### CDECL
+By default this is the default C calling convention used (on 32-bit systems that
+is).
+Arguments are passed on the stack, pushed from right to left and the calling
+function is responsible for cleaning up the stack.
+For example:
+```console
+$ objdump --disassemble=main cdecl
+
+cdecl:     file format elf32-i386
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .text:
+
+0804916c <main>:
+ 804916c:	55                   	push   %ebp
+ 804916d:	89 e5                	mov    %esp,%ebp
+ 804916f:	6a 03                	push   $0x3
+ 8049171:	6a 02                	push   $0x2
+ 8049173:	6a 01                	push   $0x1
+ 8049175:	e8 ec ff ff ff       	call   8049166 <something>
+ 804917a:	83 c4 0c             	add    $0xc,%esp
+ 804917d:	b8 00 00 00 00       	mov    $0x0,%eax
+ 8049182:	c9                   	leave  
+ 8049183:	c3 
+```
+We can see that the arguments are indeed pushed onto the stack, and we add 12
+(3*4) to the stack to remove the three arguments pushed.
+
+
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in
 memory and the processor runs by reading these instructions. Any data required
