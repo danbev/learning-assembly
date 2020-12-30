@@ -127,6 +127,34 @@ Disassembly of section .text:
 Disassembly of section .fini:
 ```
 
+### FASTCALL
+This convention allows parameters to be passed the two registers `rcx`, and
+`rdx`:
+```console
+$ objdump --disassemble=main fastcall
+
+fastcall:     file format elf32-i386
+
+
+Disassembly of section .init:
+
+Disassembly of section .plt:
+
+Disassembly of section .text:
+
+08049177 <main>:
+ 8049177:	55                   	push   %ebp
+ 8049178:	89 e5                	mov    %esp,%ebp
+ 804917a:	6a 03                	push   $0x3
+ 804917c:	ba 02 00 00 00       	mov    $0x2,%edx
+ 8049181:	b9 01 00 00 00       	mov    $0x1,%ecx
+ 8049186:	e8 db ff ff ff       	call   8049166 <something>
+ 804918b:	b8 00 00 00 00       	mov    $0x0,%eax
+ 8049190:	c9                   	leave  
+ 8049191:	c3                   	ret    
+
+Disassembly of section .fini:
+```
 
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in

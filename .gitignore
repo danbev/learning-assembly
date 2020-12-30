@@ -1,5 +1,5 @@
 *.o
 *.swp
 cdecl
-stdcall.s
 stdcall
+fastcall
