@@ -97,6 +97,36 @@ Disassembly of section .text:
 We can see that the arguments are indeed pushed onto the stack, and we add 12
 (3*4) to the stack to remove the three arguments pushed.
 
+### STDCALL
+This similar to to CDECL convention but here the callee is responsible for
+cleaning up the stack:
+```console
+$ objdump --disassemble=main stdcall
+
+stdcall:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .text:
+
+0000000000401116 <main>:
+  401116:	55                   	push   %rbp
+  401117:	48 89 e5             	mov    %rsp,%rbp
+  40111a:	48 83 ec 10          	sub    $0x10,%rsp
+  40111e:	89 7d fc             	mov    %edi,-0x4(%rbp)
+  401121:	48 89 75 f0          	mov    %rsi,-0x10(%rbp)
+  401125:	ba 03 00 00 00       	mov    $0x3,%edx
+  40112a:	be 02 00 00 00       	mov    $0x2,%esi
+  40112f:	bf 01 00 00 00       	mov    $0x1,%edi
+  401134:	e8 cd ff ff ff       	callq  401106 <something>
+  401139:	b8 00 00 00 00       	mov    $0x0,%eax
+  40113e:	c9                   	leaveq 
+  40113f:	c3                   	retq   
+
+Disassembly of section .fini:
+```
+
 
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in
