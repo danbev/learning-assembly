@@ -3,7 +3,7 @@ msg: .ascii "bajja\n"
 len: .int . - msg
 
 .text
-  .global _start
+  .globl _start
 
 _start:
   /*
