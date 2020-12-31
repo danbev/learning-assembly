@@ -89,7 +89,8 @@ to get the address:
 ### .set directive
 Can be used to set a memory location to a value.
 ```
-msg_end: .set msg_len, msg_end - msg
+done: .ascii "done...\n"
+.set done_len, . - done
 ```
 If we take a look at the binary we will find:
 ```
