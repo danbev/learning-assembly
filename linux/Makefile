@@ -10,6 +10,9 @@ write: write.o
 jle: jle.o
 	${LD} -o $@ $<
 
+cfi: cfi.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
