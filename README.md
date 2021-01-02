@@ -2390,7 +2390,7 @@ The `rdtsc` instruction returns the Time Stamp Count (TSC) in EDX:EAX.
 ### Call Frame Information (cfi)                                                
 This is a GNU AS extension to manage call frames. I some cases a function
 prologue and epilog are added to the functions stack. In these cases a debugger
-, for exception handling, or perhaps a performance tool will be able to unwind
+, or exception handling, or perhaps a performance tool will be able to unwind
 stack frames, that is be able to find where the call frame for the current
 function is, and also be able to go up/down the call stack.
 
@@ -2469,9 +2469,8 @@ Next we have:
 ```
         .cfi_offset 6, -16
 ```
-This is saving the register $rbp (see register number mapping below) at the
-offset -16 (it was just pushed onto the stack). I think this is saved in the
-table?
+This is creating an entry that the register $rbp (see register number mapping
+below) at the offset -16 (it was just pushed onto the stack).
 
 Next, we have:
 ```
@@ -2494,13 +2493,20 @@ And finally we have:
         ret
         .cfi_endproc
 ```
+If we forget to specify `.cfi_endproc` the following error will be displayed:
+```console
+$ make cfi
+as -g -o cfi.o cfi.s
+cfi.s: Assembler messages:
+cfi.s: Error: open CFI at the end of file; missing .cfi_endproc directive
+make: *** [Makefile:20: cfi.o] Error 1
+```
 And here we have the instruction to have the table emitted.
 
 We can inspect the tables using:
 ```console
 $ objdump -W simple
 ```
-
 
 Register number mapping:
 ```
@@ -2520,3 +2526,91 @@ A near jump is where a jump/call is relative to the current segment, that is
 it stays inside of the current segment. You just write jmp address
 
 When you do a far jump you specify the jmp segment:address
+
+
+## CPU Hardware
+This section aims to look into how the cpu actually works and what tools
+are available to log what is going on inside the processor (x86_64).
+
+### lstopo
+```console
+$ sudo dnf install -y hwloc hwloc-libs hwloc-gui
+```
+
+```console
+$ lstopo --no-io
+```
+
+Then we can use lstop-no-graphics to see details:
+```console
+$ lstopo-no-graphics
+Machine (31GB total)
+  Package L#0
+    NUMANode L#0 (P#0 31GB)
+    L3 L#0 (8192KB)
+      L2 L#0 (256KB) + L1d L#0 (32KB) + L1i L#0 (32KB) + Core L#0
+        PU L#0 (P#0)
+        PU L#1 (P#4)
+      L2 L#1 (256KB) + L1d L#1 (32KB) + L1i L#1 (32KB) + Core L#1
+        PU L#2 (P#1)
+        PU L#3 (P#5)
+      L2 L#2 (256KB) + L1d L#2 (32KB) + L1i L#2 (32KB) + Core L#2
+        PU L#4 (P#2)
+        PU L#5 (P#6)
+      L2 L#3 (256KB) + L1d L#3 (32KB) + L1i L#3 (32KB) + Core L#3
+        PU L#6 (P#3)
+        PU L#7 (P#7)
+  HostBridge
+    PCI 00:02.0 (VGA)
+    PCIBridge
+      PCI 04:00.0 (Network)
+        Net "wlp4s0"
+    PCIBridge
+      PCI 40:00.0 (NVMExp)
+        Block(Disk) "nvme0n1"
+    PCI 00:1f.6 (Ethernet)
+      Net "enp0s31f6"
+```
+
+### perf
+TODO: add notes
+```console
+$ perf stat ./cfi
+cfi example
+
+ Performance counter stats for './cfi':
+
+              0.07 msec task-clock:u              #    0.116 CPUs utilized
+                 0      context-switches:u        #    0.000 K/sec
+                 0      cpu-migrations:u          #    0.000 K/sec
+                 1      page-faults:u             #    0.015 M/sec
+             2,452      cycles:u                  #    0.036 GHz
+                11      instructions:u            #    0.00  insn per cycle
+                 3      branches:u                #    0.044 M/sec
+                 0      branch-misses:u           #    0.00% of all branches
+
+       0.000582347 seconds time elapsed
+
+       0.000659000 seconds user
+       0.000000000 seconds sys
+```
+
+### Micro operations
+These are operations that the cpu uses to split assembler operations into
+smaller units. For example, take the following code:
+```assembly
+  push eax
+  call something
+```
+This can be split into two operations:
+```
+  sub esp, 4
+  mov [esp], eax
+```
+Here the first operation can be performed even if the value of eax is not 
+ready yet. And since these operations are now split the call operation can
+proceed which would not be possible otherwise (if there was only a single
+non-divisable push operation that is).
+Not all assembly language operations can be divided into micro operations, like
+simple add with only registers would not be. But if there is a memory fetch it
+would be split.
