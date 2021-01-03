@@ -2653,6 +2653,10 @@ cfi example
 ```
 
 ### CPU Caches
+There are different types of caches, for data, for instructions, the
+translation lookaside buffer (tlb) etc.
+
+
 Below is a rough latencies in clockcycles that different caches have:
 ```
 Register 0
@@ -2681,7 +2685,38 @@ LEVEL4_CACHE_SIZE                  0
 LEVEL4_CACHE_ASSOC                 0
 LEVEL4_CACHE_LINESIZE              0
 ```
-So we can see that the L1 cache line size is 64.
+And notice that there is a L1 instruction cache and an L1 data cache both which
+are of size 32 KB. 
+And also notice that the L2 cache is for both instructions and data which is
+also true for the L3 cache. The L2 cache size is 2MB and L3 8MB.
+
+So we can see that the L1 cache line size is 64 bytes which is 512 bits and
+if we are storing 32 bit values that would mean 16 entries (512/32)
+```
+[0000 0000 0000 0000] 0
+[0000 0000 0000 0000] 1
+[   ...             ]
+[0000 0000 0000 0000] 15
+```
+This is mainly to get a feel for how much/many data/instructions we can fetched
+each time. 
+And if we are storing 64 bit values we would only be able to store 8 entries.
+
+When thinking about instructions and cache keep in mind that the instructions
+are also stored and retreived from main memory. The will be fetched one
+cache line at a time. So if our code is just linear and only contains jumps
+that are in that same cache line things will be efficient. But if there are
+jumps outside of the cache line the instructions specified in the jump
+instruction must be fetched. So we want to keep the jumps local or avoid them
+if possible.
+
+When accessing data the hardware will speculatively fetch the next or previous
+cache line from memory so if we are traversing sequentially over an array the
+next data element will almost always already be in the cache (prefetched).
+This holds for both instruction and data access. It actually does not have to
+be accessing every single element as long as there is some predictability, like
+every second, or every third for example this will also hold true (predictable
+stride).
 
 ### Micro operations
 These are operations that the cpu uses to split assembler operations into
