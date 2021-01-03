@@ -2579,6 +2579,16 @@ Flags:                           fpu vme de pse tsc msr pae mce cx8 apic sep mtr
                                  wp_epp md_clear flush_l1d
 ```
 
+To get information about the caches:
+```console
+$ lscpu --caches
+NAME ONE-SIZE ALL-SIZE WAYS TYPE        LEVEL
+L1d       32K     128K    8 Data            1
+L1i       32K     128K    8 Instruction     1
+L2       256K       1M    4 Unified         2
+L3         8M       8M   16 Unified         3
+```
+
 ### lstopo
 ```console
 $ sudo dnf install -y hwloc hwloc-libs hwloc-gui
@@ -2641,6 +2651,37 @@ cfi example
        0.000659000 seconds user
        0.000000000 seconds sys
 ```
+
+### CPU Caches
+Below is a rough latencies in clockcycles that different caches have:
+```
+Register 0
+L1 Cache 3  (per core)
+L2 Cache 9  (per core)
+L3 Cache 21 (shared with all cores)
+Main memory 150-400
+```
+
+Recall that data is moved in sizes of cache lines. To get the size of caches:
+```console
+$ getconf -a | grep CACHE
+LEVEL1_ICACHE_SIZE                 32768
+LEVEL1_ICACHE_ASSOC                8
+LEVEL1_ICACHE_LINESIZE             64
+LEVEL1_DCACHE_SIZE                 32768
+LEVEL1_DCACHE_ASSOC                8
+LEVEL1_DCACHE_LINESIZE             64
+LEVEL2_CACHE_SIZE                  262144
+LEVEL2_CACHE_ASSOC                 4
+LEVEL2_CACHE_LINESIZE              64
+LEVEL3_CACHE_SIZE                  8388608
+LEVEL3_CACHE_ASSOC                 16
+LEVEL3_CACHE_LINESIZE              64
+LEVEL4_CACHE_SIZE                  0
+LEVEL4_CACHE_ASSOC                 0
+LEVEL4_CACHE_LINESIZE              0
+```
+So we can see that the L1 cache line size is 64.
 
 ### Micro operations
 These are operations that the cpu uses to split assembler operations into
