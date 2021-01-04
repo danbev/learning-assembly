@@ -2578,6 +2578,15 @@ Flags:                           fpu vme de pse tsc msr pae mce cx8 apic sep mtr
                                  lushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window h
                                  wp_epp md_clear flush_l1d
 ```
+So I have one socket, and it has 4 cpu chips (cores) on this single socket.
+A core is the processing unit that reads and executes instructions. Intel
+introduced hyper threading which enables each core to have two threads instead
+of one to enable the core to be able to process . 
+To the operating system it will look like my machine has 8 cores/cpus but there
+are only 4 actual cores in the socket and the OS schedular will be able to
+process tasks on any of these. Hyperthreading increases the amount of independent
+instructions in the pipeline. So there is no difference in how these logical/
+virtual cores operate, the OS will just treat them as normal physical cores.
 
 To get information about the caches:
 ```console
@@ -2717,6 +2726,47 @@ This holds for both instruction and data access. It actually does not have to
 be accessing every single element as long as there is some predictability, like
 every second, or every third for example this will also hold true (predictable
 stride).
+
+
+Now we have to remember that the L1 and L2 are local to each core, and the
+L3 cache is shared between all cores:
+```
+                                                                 +-------------+
+                                                +-----------+    | Main Memory |
++-------------------------------------------+   | L3 cache  |    |             |
+| Core 0  +----------+      +----------+    |   |           |    |             |
+| T0      |L1 I cache|      | L2 cache |    |   |           |    |             |
+|         +----------+      |          |    |   |           |    |             |
+| T1      |L1 D cache|      |          |    |   |           |    |             |
+|         +----------+      +----------+    |   |           |    |             |
++-------------------------------------------+   |           |    |             |
+                                                |           |    |             |
+                                                |           |    |             |
++-------------------------------------------+   |           |    |             |
+| Core 1  +----------+      +----------+    |   |           |    |             |
+| T0      |L1 I cache|      | L2 cache |    |   |           |    |             |
+|         +----------+      |          |    |   |           |    |             |
+| T1      |L1 D cache|      |          |    |   |           |    |             |
+|         +----------+      +----------+    |   |           |    |             |
++-------------------------------------------+   |           |    |             |
+                                                +-----------+    |             |
+                                                                 +-------------+
+```
+
+Each core has two thread which are named T0/T1 above. So to the computer it will
+look like there are 4 cores available to this system. And each core is what
+has an instruction pipeline which can process instructions that use data. 
+Now, imaging that T0 is working on a piece of data, which means that the
+cache line that contains this data will be in L1 cache. Now, say that T1 in
+Core 1 is working on another piece of data that happens to be close to the
+piece of data that L0 is working on. This would mean that both Core 0 and
+Core 1 have the same cache line loaded into its cache. Even though they are not
+working on the exact same piece of data they will still need to the cache lines
+to synchronized. This is called false sharing.
+But if we can make sure they don't work on the same cache line this would not be
+needed.
+TODO: document how the syncrhonization works.
+
 
 ### Micro operations
 These are operations that the cpu uses to split assembler operations into
