@@ -105,3 +105,23 @@ This can also be written as:
 msg_len = . - msg
 ```
 
+### GAS section directive
+This directive has the following format:
+```
+.section name [, "flags"[, @type[, flag_specific_args]]]
+```
+
+### syscall
+syscall is used to make an indirect system call and has the following signature:
+```
+     long syscall(long number, ...);
+```
+And example is when calling exit which has sys number 60:
+```
+  mov $60, %rax
+  xor %rdi, %rdi
+  syscall
+```
+The system calls can be found using `man syscalls` and the actual numbers can
+be found in `/usr/include/asm/unistd_64.h`
+
