@@ -125,3 +125,6 @@ And example is when calling exit which has sys number 60:
 The system calls can be found using `man syscalls` and the actual numbers can
 be found in `/usr/include/asm/unistd_64.h`
 
+So the system call number is passed in rax, and the following arguments to the
+actual system call are passed in rdi, rsi, rdx, r10, r8, r9. And the result is
+stored in rax.
