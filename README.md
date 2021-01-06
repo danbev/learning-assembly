@@ -156,6 +156,25 @@ Disassembly of section .text:
 Disassembly of section .fini:
 ```
 
+### x86_64 calling conventions
+The caller should save the contents of r10, r11, and any registers that need to
+be used for passing arguments to the function being called. This is done by
+pushing them onto the stack.
+
+Registers parameters (in order):
+```
+rdi
+rsi
+rdx
+rcx
+r8
+r9
+```
+Any additional parameters are pushed onto the stack in right to left order.
+The return value will be placed in rax. The caller should then pop the any
+values that it saved on the stack before calling the function.
+
+
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in
 memory and the processor runs by reading these instructions. Any data required
