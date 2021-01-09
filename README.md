@@ -2942,3 +2942,14 @@ non-divisable push operation that is).
 Not all assembly language operations can be divided into micro operations, like
 simple add with only registers would not be. But if there is a memory fetch it
 would be split.
+
+
+### _mm_clflush
+Is declared in `emmintrin.h`:
+```
+void _mm_clflush(void const* p)
+```
+Calling this function will invalidate (marks the cacheline as invalid so that
+future reads go to main memory), and flush (write the contents back to
+main memory). The cacheline is the cacheline that contains p.
+
