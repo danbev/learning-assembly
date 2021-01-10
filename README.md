@@ -2953,3 +2953,14 @@ Calling this function will invalidate (marks the cacheline as invalid so that
 future reads go to main memory), and flush (write the contents back to
 main memory). The cacheline is the cacheline that contains p.
 
+There is an example in [cache.c](./cache.c)
+
+### __rdtscp
+
+```c
+#include <immintrin.h>
+unsigned __int64 __rdtscp (unsigned int * mem_addr)
+```
+This function will copy the the current 64 bit value of the processors time
+stamp counter into dst?
+
