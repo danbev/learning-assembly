@@ -18,13 +18,13 @@ int main(int argc, char** argv) {
   }
 
   register uint64_t start, end;
-  int dummy = 0;
+  int core_id = 0;
   for (int i = 0; i < cache_size; i++) {
-    start = __rdtscp(&dummy);
+    start = __rdtscp(&core_id);
     array[i]++;
-    end = __rdtscp(&dummy);
+    end = __rdtscp(&core_id);
     unsigned long duration = end - start;
-    printf("%u\n", duration);
+    printf("Duration of increment operation: %u core_id: %x\n", duration, core_id);
   }
   return 0;
 }
