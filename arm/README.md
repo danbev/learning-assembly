@@ -42,3 +42,11 @@ $ docker run -ti arm-assembly sh
 ```console
 $ docker run -ti  -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
 ```
+
+### Compiling and linking
+```console
+/src # as first.s -o first.o
+/src # ld -o first first.o 
+/src # ./first
+Hello, ARM64!
+```
