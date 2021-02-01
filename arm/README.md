@@ -15,11 +15,18 @@ Before version 3 ARM processors were little-endian but after that the ARM
 processors have become BI-endian which allows the endienness to be toggled.
 
 ### ARM mode
-TODO:
+This is the traditional instructions set where instructions are 32-bits long.
 
 ### Thumb mode
-In this mode instructions can be either 2 or 4 bytes long.
+This mode supports higher code density where instructions can be either 16-bits
+and some are still 32-bits long.
 
+### Thumb2 mode
+My understanding of this is that you have to choose if you use ARM mode or
+Thumb mode when writing code. Thumb2 adds more instructions to Thumb mode so
+that it is almost on par with Arm mode, but also adds a new assembly syntax
+to allow for writing code in a unified way and then deciding on the mode at
+assemble time. The is called Unified Assembly Language (UAL).
 
 ### ARM versions
 ```
@@ -27,10 +34,13 @@ ARM Family                ARM architecture
 ARM7                      ARM v4
 ARM9                      ARM v5
 ARM11                     ARM v6
-Cortex-A                  ARM v7-A
-Cortex-R                  ARM v7-R
-Cortex-M                  ARM v7-M
+Cortex-A                  ARM v7-A   (A=Application)
+Cortex-R                  ARM v7-R   (R=Realtime)
+Cortex-M                  ARM v7-M   (M=Microcontroller)
 ```
+
+### ARMv8
+Introduced AArch64, which is a new instruction set (64 bit support).
 
 ### Container for assembly development
 ```console
