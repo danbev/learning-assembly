@@ -1,0 +1,10 @@
+[copr:copr.fedorainfracloud.org:lantw44:aarch64-linux-gnu-toolchain]
+name=Copr repo for aarch64-linux-gnu-toolchain owned by lantw44
+baseurl=https://download.copr.fedorainfracloud.org/results/lantw44/aarch64-linux-gnu-toolchain/fedora-$releasever-$basearch/
+type=rpm-md
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/lantw44/aarch64-linux-gnu-toolchain/pubkey.gpg
+repo_gpgcheck=0
+enabled=1
+enabled_metadata=1
