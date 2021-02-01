@@ -49,3 +49,10 @@ $ docker run -ti  -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
 /src # ./first
 Hello, ARM64!
 ```
+
+### load address (ldr)
+This is used to load the address, like leaq in x86_64. The `=` sign is used
+in this case:
+```assembly
+    ldr     x1, =msg
+```
