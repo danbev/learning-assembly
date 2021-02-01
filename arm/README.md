@@ -56,3 +56,27 @@ in this case:
 ```assembly
     ldr     x1, =msg
 ```
+
+### QEMU
+Machine emulator.
+
+#### Setup
+```console
+$ sudo cp fedora_aarch64.repo /etc/yum.repos.d/
+$ dnf install aarch64-linux-gnu-{binutils,gcc,glibc}
+```
+
+#### Compiling and linking
+```console
+$ aarch64-linux-gnu-as -o first.o src/first.s
+$ aarch64-linux-gnu-ld -o first first.o
+$ file first
+first: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, not stripped
+```
+
+#### Run using QEMU
+```console
+$ $ qemu-aarch64 first
+Hello, ARM64!
+```
+
