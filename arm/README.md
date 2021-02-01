@@ -35,7 +35,6 @@ Cortex-M                  ARM v7-M
 ### Container for assembly development
 ```console
 $ docker build -t arm-assembly .
-$ docker run -ti arm-assembly sh
 ```
 
 ### Run the container
