@@ -60,6 +60,15 @@ $ docker run -ti  -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
 Hello, ARM64!
 ```
 
+### System calls
+See [64-bit table](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md#tables)
+for system call numbers.
+The instruction for system calls is `svc` (system service perhaps) which take
+a system call number for the table above. The arguments the system call takes
+can also be see in the table above in the additional columns for each call.
+
+
+
 ### load address (ldr)
 This is used to load the address, like leaq in x86_64. The `=` sign is used
 in this case:
@@ -89,4 +98,6 @@ first: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically link
 $ $ qemu-aarch64 first
 Hello, ARM64!
 ```
+
+### Microprocessor without Interlocked Pipelined Stages (MIPS)
 
