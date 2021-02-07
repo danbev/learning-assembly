@@ -128,3 +128,105 @@ be found in `/usr/include/asm/unistd_64.h`
 So the system call number is passed in rax, and the following arguments to the
 actual system call are passed in rdi, rsi, rdx, r10, r8, r9. And the result is
 stored in rax.
+
+### execve
+This section will look closer at the execve system call and calling it from
+assembly code.
+
+```c
+#include <unistd.h>
+
+int execve(const char *pathname, char *const argv[],
+           char *const envp[]);
+```
+
+System call nr is `59` which is the value that does into `%rax`.
+```
+mov $59, %rax
+```
+
+The first argument which is the file name is passed in `%rdi`.
+```
+```
+
+The second argument which is argv is passed in `%rsi%`.
+```
+```
+And the last argument which is envp is passed in `%rdx`.
+```
+```
+
+### array on the stack
+So it was not obvious to me how to create an array on the stack in assembly and
+adding elements to it.
+```c
+int main() {                                                                       
+  int array[2] = {1, 2};                                                           
+  int* ptr = array;
+} 
+```
+
+```console
+$ gcc -o arr arr.c -fomit-frame-pointer
+```
+
+```console
+$ objdump --disassemble=main arr
+
+arr:     file format elf64-x86-64
+
+
+Disassembly of section .init:
+
+Disassembly of section .text:
+
+0000000000401106 <main>:
+  401106:	c7 44 24 f0 01 00 00 	movl   $0x1,-0x10(%rsp)
+  40110d:	00 
+  40110e:	c7 44 24 f4 02 00 00 	movl   $0x2,-0xc(%rsp)
+  401115:	00 
+  401116:	48 8d 44 24 f0       	lea    -0x10(%rsp),%rax
+  40111b:	48 89 44 24 f8       	mov    %rax,-0x8(%rsp)
+  401120:	b8 00 00 00 00       	mov    $0x0,%eax
+  401125:	c3                   	retq   
+
+Disassembly of section .fini:
+```
+So this is interesting, we are just place the 1 on the stack relative to the
+stack pointer (now remember that the position is given in hex! I keep forgetting
+this when debugging):
+```console
+(lldb) memory read -f x -c 1 -s 4 '$rsp - 16'
+0x7fffffffd0e8: 0x00000001
+```
+So the whole array would be at:
+```console
+(lldb) memory read -f x -c 2 -s 4 '$rsp - 16'
+0x7fffffffd0e8: 0x00000001 0x00000000
+```
+And we can verify this by stepping over the next instruction using si
+```console
+(lldb) si
+(lldb) memory read -f x -c 2 -s 4 '$rsp - 16'
+0x7fffffffd0e8: 0x00000001 0x00000002
+```
+Now, we have the `ptr` local variable which is loading the effective address
+of `%rsp - 16` into rax, which is the address of the first entry of the array.
+Next this value is stored in location `%rsp - 8`. 
+```console
+(lldb) register read rax
+     rax = 0x0000000000401106  arr`main at arr.c:2:7
+(lldb) register read rax
+     rax = 0x00007fffffffd0e8
+(lldb) memory read -f x -c 1 -s 4 '$rsp - 8'
+0x7fffffffd0f0: 0x00000000
+(lldb) si
+(lldb) memory read -f x -c 1 -s 4 '$rsp - 8'
+0x7fffffffd0f0: 0xffffd0e8
+```
+Now this might seem really trivial but it can be good to know how to actually
+create an array on the stack in assembler without having to first disassemble
+c code.
+
+
+Notice that we are using `%rsp` 
