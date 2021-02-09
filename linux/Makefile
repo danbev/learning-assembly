@@ -13,6 +13,9 @@ jle: jle.o
 cfi: cfi.o
 	${LD} -o $@ $<
 
+arr: arr.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
