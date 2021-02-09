@@ -141,19 +141,22 @@ int execve(const char *pathname, char *const argv[],
 ```
 
 System call nr is `59` which is the value that does into `%rax`.
-```
+```assembly
 mov $59, %rax
 ```
 
 The first argument which is the file name is passed in `%rdi`.
-```
+```assembly
+  lea msg, %rdi  
 ```
 
-The second argument which is argv is passed in `%rsi%`.
-```
+The second argument which is argv is passed in `%rsi%`. Now this is an array
+of char pointers which we need to create.
+```assembly
 ```
 And the last argument which is envp is passed in `%rdx`.
 ```
+```assembly
 ```
 
 ### array on the stack
@@ -228,5 +231,107 @@ Now this might seem really trivial but it can be good to know how to actually
 create an array on the stack in assembler without having to first disassemble
 c code.
 
+### Stack addressing
+I need to remind myself that the stack is just a part of memory, but handled
+in a different way. The stack is there in the allocated memory for the process
+and we can use memory locations below the stack pointer value (rsp). Remember
+that rsp just points to a memory location that happens to be what some
+instructions update when the are executed, for example, push/pop will subtract
+and add to value in rsp. But if we don't use those instructions we are free
+to just store values by using mov and placing values in specific locations
+relative to rsp (if rsp moves we would be in trouble which in those cases we
+would use a base pointer/frame pointer in rbp).
 
-Notice that we are using `%rsp` 
+We have to know what size of the data we are going to move so that move
+instruction will know.
+```
+movb     1 bytes (8 bits)
+movs     single (32-bit floating point)
+movw     word (16 bits)
+movl     long (32-bit integer or 64-bit floating point)
+movq     quad (64-bit)
+movt     ten bytes (80-bit floating point)
+```
+Lets explore this a little using [arr.s](./arr.s):
+```console
+(lldb) br s -n _start
+```
+Now, lets say we want to see the the stack from the current rsp and 64 bytes
+down which is the stack where we can place values.
+To do this we have to remember that the stack grows downward, so we want to
+look at from the current rsp down 64 bytes which means subtracting 64 from rsp:
+```console
+(lldb) memory read -f x -c 10 -s 8 '$rsp - 64'
+0x7fffffffd190: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1a0: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1b0: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1c0: 0x0000000000000000 0x0000000000000000
+
+(lldb) memory read -f x -c 10 -s 8 '$rsp - 64'
+0x7fffffffd190: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1a0: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1b0: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1c0: 0x0000000000000000 0x0000000000000000
+0x7fffffffd1d0: 0x0000000000000001 0x00007fffffffd5a1
+```
+
+Now, depending on the data stored we might be interested in looking at bytes, 
+words, etc. So we need to adjust the `size` `-s` and also the `count` `-c`.
+The size is the size of the memory granuality that we be displayed which makes
+it easier to see what belongs to which memory locations.
+```console
+(lldb) memory read -f x -c 20 -s 4 '$rsp - 64'
+0x7fffffffd190: 0x00000000 0x00000000 0x00000000 0x00000000
+0x7fffffffd1a0: 0x00000000 0x00000000 0x00000000 0x00000000
+0x7fffffffd1b0: 0x00000000 0x00000000 0x00000000 0x00000000
+0x7fffffffd1c0: 0x00000000 0x00000000 0x00000002 0x00000000
+0x7fffffffd1d0: 0x00000004 0x00000000 0xffffd5a1 0x00007fff
+```
+```
+Bytes: size: 1 count: 64/1 = 64  (add one for rsp)
+Word:  size: 2 count: 64/2 = 32  (add one for rsp)
+Quad:  size: 4 count: 64/4 = 16  (add one for rsp)
+
+```
+Byte example
+```console
+(lldb) memory read -f x -c 65 -s 1 '$rsp - 64'
+0x7fffffffd190: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd198: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1a0: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1a8: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1b0: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1b8: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1c0: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1c8: 0x02 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+0x7fffffffd1d0: 0x04
+```
+
+
+Word example:
+```console
+(lldb) memory read -f x -c 33 -s 2 '$rsp - 64'
+0x7fffffffd190: 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000
+0x7fffffffd1a0: 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000
+0x7fffffffd1b0: 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000 0x0000
+0x7fffffffd1c0: 0x0000 0x0000 0x0000 0x0000 0x0002 0x0000 0x0000 0x0000
+0x7fffffffd1d0: 0x0004
+```
+
+Quad example:
+```console
+(lldb) memory read -f x -c 17 -s 4 '$rsp - 64'
+0x7fffffffd190: 0x00000000 0x00000000 0x00000000 0x00000000
+0x7fffffffd1a0: 0x00000000 0x00000000 0x00000000 0x00000000
+0x7fffffffd1b0: 0x00000000 0x00000000 0x00000000 0x00000000
+0x7fffffffd1c0: 0x00000000 0x00000000 0x00000002 0x00000000
+0x7fffffffd1d0: 0x00000004
+```
+
+
+```
+(lldb) command alias showstack memory read -f x -c 10 -s 8 `$rsp - 64`
+```
+Using a `count` of 10 instead of 8 means that we can also see rsp which is nice
+to see where the bottom of the stack.
+
