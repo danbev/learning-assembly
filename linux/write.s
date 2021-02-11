@@ -14,7 +14,7 @@ _start:
   mov $1, %rax   /* syscall number */
   mov $1, %rdi   /* file descriptor (stdout) */
   lea msg, %rsi  /* load the address of msg into rsi */
-  mov len, %dl /* length to write */
+  mov len, %edx /* length to write */
   syscall
 
   mov $60, %rax
