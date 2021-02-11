@@ -328,10 +328,91 @@ Quad example:
 0x7fffffffd1d0: 0x00000004
 ```
 
+Now, if we specify addressing relative to a register we use an number before
+the register and use parentheses:
+```
+  movb $4, 0(%rsp)
+  movb $2, -1(%rsp)
+  movb $3, -2(%rsp)
+```
+Doing this this
+```console
+(lldb) memory read -f x -c 4 -s 1 '$rsp - 3'
+0x7fffffffd1cd: 0x00 0x03 0x02 0x01
+```
 
+And we can use the address from rsp to address the different values, just
+like an array of ints:
+```console
+(lldb) register read rsp
+     rsp = 0x00007fffffffd1d0
+(lldb) memory read -f x -c 1 -s 1 '0x00007fffffffd1d0 - 2'
+0x7fffffffd1ce: 0x03
+(lldb) memory read -f x -c 1 -s 1 '0x00007fffffffd1d0 - 1'
+0x7fffffffd1cf: 0x02
+(lldb) memory read -f x -c 1 -s 1 '0x00007fffffffd1d0 - 0'
+0x7fffffffd1d0: 0x01
+```
+
+One thing to note is that when we run the example program this it will be invoked
+by `execve`:
+```console
+$ strace ./arr 
+execve("./arr", ["./arr"], 0x7fffde884fb0 /* 74 vars */) = 0
+exit(0)                                 = ?
++++ exited with 0 +++
+```
+And when we break in the debugger we can inspect the existing stack:
+```console
+(lldb) memory read -f x -c 8 -s 8 '$rsp'
+0x7fffffffd1d0: 0x0000000000000001 0x00007fffffffd5a1
+0x7fffffffd1e0: 0x0000000000000000 0x00007fffffffd5e0
+0x7fffffffd1f0: 0x00007fffffffd5f4 0x00007fffffffd62a
+0x7fffffffd200: 0x00007fffffffd641 0x00007fffffffd660
+(lldb) memory read -f s 0x00007fffffffd5a1
+0x7fffffffd5a1: "/home/danielbevenius/work/assembly/learning-assembly/linux/arr"
+```
+The value in top most position on the stack is argc which above is 1. So really
+our program should not overwrite that value but instead substract the size of
+an int (32-bits/4-bytes) and then add our values.
+```assembly
+  sub  $1, %rsp
+```
+Notice that the register we have specified is a 64 bit register
+
+```
+(lldb) register read rsp
+     rsp = 0x00007fffffffd1b0
+(lldb) si
+(lldb) register read rsp
+     rsp = 0x00007fffffffd1af
+```
+140737488343472 140737488343471
+
+Try to add an alias for this which will take the size of the stack to show:
 ```
 (lldb) command alias showstack memory read -f x -c 10 -s 8 `$rsp - 64`
 ```
-Using a `count` of 10 instead of 8 means that we can also see rsp which is nice
-to see where the bottom of the stack.
 
+### mov label 
+When you move something you need to think about how much you data you are
+moving. For example, take the following:
+```assembly
+.data
+msg: .ascii "something\n"
+len: .int . - msg
+...
+
+  mov len, %rdx
+```
+This is moving 64 bits into rdx starting from the memory location len. In our
+case the first 32 bits of len contain our message length which is 10 (a in hex)
+and the rest is whatever follows in the data section.
+If we only want to move our int we can use:
+```assembly
+mov len %edx
+```
+or 
+```assembly
+mov len %dl
+```
