@@ -1,5 +1,5 @@
 .data
-msg: .ascii "bajja\n"
+msg: .ascii "something something\n"
 len: .int . - msg
 
 .text
