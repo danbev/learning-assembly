@@ -16,6 +16,9 @@ cfi: cfi.o
 arr: arr.o
 	${LD} -o $@ $<
 
+multi: multi.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
