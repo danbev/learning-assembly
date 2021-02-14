@@ -416,3 +416,24 @@ or
 ```assembly
 mov len %dl
 ```
+
+### mul
+Take the [example](./multi.s) and if we run this in the debugger we find:
+```console
+$ lldb -- ./multi 
+(lldb) target create "./multi"
+Current executable set to './multi' (x86_64).
+(lldb) br s -n _start
+(lldb) r
+(lldb) register read rax rbx
+     rax = 0x0000000000000008
+     rbx = 0x0000000000000004
+(lldb) si
+(lldb) register read rax rbx
+     rax = 0x0000000000000020
+     rbx = 0x0000000000000004
+(lldb) register read -f d rax rbx
+     rax = 32
+     rbx = 4
+```
+Notice that the result of the multiplication is placed in `rax`.
