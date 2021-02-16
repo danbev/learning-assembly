@@ -437,3 +437,71 @@ Current executable set to './multi' (x86_64).
      rbx = 4
 ```
 Notice that the result of the multiplication is placed in `rax`.
+
+### div
+This operaton generates two output values, the quotient and a remainder.
+
+Take the [example](./div.s) and if we run this in the debugger we find:
+```console
+   4   	_start:
+   5   	  mov $21, %ax
+   6   	  mov $2, %bx
+-->7   	  div %bx
+(lldb) register read -f d al ah bx
+      al = 21
+      ah = 0
+      bx = 2
+(lldb) si
+(lldb) register read -f d al ah dx
+      al = 10
+      ah = 0
+      dx = 1
+```
+Notice the quotent is in `al` and the remainder is in `dx`. 
+
+### integer to string
+To do this in assembly we need to take a look at how this is done.
+We have an integer which is a number of digits. We divide take the remainder of
+dividing the number by 10 to get the right most digit, and then continue
+dividing until there are no more digits.
+
+```
+234 % 10 = 4-------------+
+234 / 10 = 23            |
+                         |
+           +------------↓↓
+23 % 10  = 3           234
+23 / 10  = 2           ↑
+                       |
+2  % 10  = 2-----------+
+2  / 10  = 0
+```
+So when we get 0 as the quotient (the result of dividing the number by 10) we
+are finished, and if we take the remainders (shown as separate operations above
+but the `div` operation in assembly produces both), we have the number if the
+reverse order (432 instread of 234). Now we still want to print these and that
+will be done with ascii. In ascii the zero digit has the value 48:
+```console
+$ man ascii
+Oct   Dec   Hex   Char                        Oct   Dec   Hex   Char
+────────────────────────────────────────────────────────────────────────
+000   0     00    NUL '\0' (null character)   100   64    40    @
+...
+012   10    0A    LF  '\n' (new line)         112   74    4A    J
+...
+060   48    30    0                           160   112   70    p
+061   49    31    1                           161   113   71    q
+062   50    32    2                           162   114   72    r
+063   51    33    3                           163   115   73    s
+064   52    34    4                           164   116   74    t
+065   53    35    5                           165   117   75    u
+066   54    36    6                           166   118   76    v
+067   55    37    7                           167   119   77    w
+070   56    38    8                           170   120   78    x
+071   57    39    9                           171   121   79    y
+```
+So if we take our digit `4` and add `48` we get `52`. And if we do that will
+all the digits and arrage them after each other in memory we can then pass
+a pointer to that memory to the write system call.
+
+
