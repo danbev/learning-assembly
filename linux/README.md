@@ -535,12 +535,72 @@ $ execstack exec-stack
 $ ./exec-stack 
 Trace/breakpoint trap (core dumped)
 ```
-And with the section:
+And we can inspect the section headers and see that it lacks a .not.GNU-stack.
+```console
+$ readelf -WS exec-stack.o
+There are 16 section headers, starting at offset 0x408:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        0000000000000000 000040 000015 00  AX  0   0  1
+  [ 2] .rela.text        RELA            0000000000000000 000280 000018 18   I 13   1  8
+  [ 3] .data             PROGBITS        0000000000000000 000055 000004 00  WA  0   0  1
+  [ 4] .bss              NOBITS          0000000000000000 000059 000000 00  WA  0   0  1
+  [ 5] .debug_line       PROGBITS        0000000000000000 000059 000041 00      0   0  1
+  [ 6] .rela.debug_line  RELA            0000000000000000 000298 000018 18   I 13   5  8
+  [ 7] .debug_info       PROGBITS        0000000000000000 00009a 00002e 00      0   0  1
+  [ 8] .rela.debug_info  RELA            0000000000000000 0002b0 0000a8 18   I 13   7  8
+  [ 9] .debug_abbrev     PROGBITS        0000000000000000 0000c8 000014 00      0   0  1
+  [10] .debug_aranges    PROGBITS        0000000000000000 0000e0 000030 00      0   0 16
+  [11] .rela.debug_aranges RELA            0000000000000000 000358 000030 18   I 13  10  8
+  [12] .debug_str        PROGBITS        0000000000000000 000110 000054 01  MS  0   0  1
+  [13] .symtab           SYMTAB          0000000000000000 000168 000108 18     14  10  8
+  [14] .strtab           STRTAB          0000000000000000 000270 00000d 00      0   0  1
+  [15] .shstrtab         STRTAB          0000000000000000 000388 000080 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  l (large), p (processor specific)
+```
+
+And if we add the section the section:
 ```console
 $ execstack exec-stack
 - exec-stack
 $ ./exec-stack 
 Segmentation fault (core dumped)
+```
+We can see that the `.not.GNU-stack` section is there:
+```console
+$ readelf -WS exec-stack.o
+There are 17 section headers, starting at offset 0x430:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        0000000000000000 000040 000015 00  AX  0   0  1
+  [ 2] .rela.text        RELA            0000000000000000 000298 000018 18   I 14   1  8
+  [ 3] .data             PROGBITS        0000000000000000 000055 000004 00  WA  0   0  1
+  [ 4] .bss              NOBITS          0000000000000000 000059 000000 00  WA  0   0  1
+  [ 5] .note.GNU-stack   PROGBITS        0000000000000000 000059 000000 00      0   0  1
+  [ 6] .debug_line       PROGBITS        0000000000000000 000059 000041 00      0   0  1
+  [ 7] .rela.debug_line  RELA            0000000000000000 0002b0 000018 18   I 14   6  8
+  [ 8] .debug_info       PROGBITS        0000000000000000 00009a 00002e 00      0   0  1
+  [ 9] .rela.debug_info  RELA            0000000000000000 0002c8 0000a8 18   I 14   8  8
+  [10] .debug_abbrev     PROGBITS        0000000000000000 0000c8 000014 00      0   0  1
+  [11] .debug_aranges    PROGBITS        0000000000000000 0000e0 000030 00      0   0 16
+  [12] .rela.debug_aranges RELA            0000000000000000 000370 000030 18   I 14  11  8
+  [13] .debug_str        PROGBITS        0000000000000000 000110 000054 01  MS  0   0  1
+  [14] .symtab           SYMTAB          0000000000000000 000168 000120 18     15  11  8
+  [15] .strtab           STRTAB          0000000000000000 000288 00000d 00      0   0  1
+  [16] .shstrtab         STRTAB          0000000000000000 0003a0 000090 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  l (large), p (processor specific)
 ```
 
 `PT_GNU_STACK` program header entry.  If the marking is missing, kernel or
