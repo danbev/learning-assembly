@@ -505,3 +505,55 @@ all the digits and arrage them after each other in memory we can then pass
 a pointer to that memory to the write system call.
 
 
+### executable stack
+The background here is that linux as allowed the stack to be executable in the
+past, for example for nested functions and trampoline code. I think this was
+before exploits were a real issue. But nowadays this is something that is
+prevented and linkers will add a section in the exectable. But if this section
+is missing the stack is executable. 
+
+When the ld does its linking linking, it will mark the stack as executable based
+if a single object file is not marked as non-executable. So one object file
+for example an assembly source that does is not marked as non-executable would
+make the entire library/executable become marked as having an executable stack.
+
+When assembling this can be specified using:
+```
+--execstack or --noexecstack assembler options 
+```
+
+The following tool can be used to check if stack execution is required:
+```console
+$ sudo dnf install execstack
+```
+
+Example, [exec-stack.s](./exec-stack.s) without and `.not.GNU-stack` section:
+```console
+$ make exec-stack
+$ execstack exec-stack
+? exec-stack
+$ ./exec-stack 
+Trace/breakpoint trap (core dumped)
+```
+And with the section:
+```console
+$ execstack exec-stack
+- exec-stack
+$ ./exec-stack 
+Segmentation fault (core dumped)
+```
+
+`PT_GNU_STACK` program header entry.  If the marking is missing, kernel or
+dynamic linker need to assume it might need executable stack.
+
+The most common reason that this fails these days is that part of the program
+is written in assembler, and the assembler code does not create a
+`.note.GNU_stack section`. If you write assembler code for GNU/Linux, you must
+always be careful to add the appropriate line to your file.
+
+For most targets, the line you want is:
+```assembly
+.section .note.GNU-stack,"",@progbits
+```
+
+
