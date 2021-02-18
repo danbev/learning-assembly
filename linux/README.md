@@ -616,4 +616,8 @@ For most targets, the line you want is:
 .section .note.GNU-stack,"",@progbits
 ```
 
+## No Execute (NX)
+The no execute bit is used in CPUs to separate memory areas for either data
+storage or instructions storage. An operating system with NX support will mark
+certain areas of memory as non-exeutable.
 
