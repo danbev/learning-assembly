@@ -11,6 +11,6 @@ _start:
   mov $0, %rdi
   syscall
 
-/* Notice that without the following directive it is not possible to execute
+/* Notice that with the following directive it is not possible to execute
    instructions in the data section */
 #.section .note.GNU-stack,"",@progbits
