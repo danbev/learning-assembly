@@ -13,4 +13,6 @@ _start:
 
 /* Notice that with the following directive it is not possible to execute
    instructions in the data section */
-#.section .note.GNU-stack,"",@progbits
+#if defined(__linux__) && defined(__ELF__)
+#.section .note.GNU-stack,"",%progbits
+#endif
