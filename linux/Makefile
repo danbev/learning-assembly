@@ -19,6 +19,9 @@ arr: arr.o
 multi: multi.o
 	${LD} -o $@ $<
 
+exec-stack: exec-stack.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
