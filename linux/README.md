@@ -569,6 +569,14 @@ Or you can add the section to the assembly source file:
 Specifying `--noexecstack` would be the same as adding the section to the
 assembly source code.
 
+It is also possible to specify this flag to the linker:
+```console
+$ as -o exec-stack.o exec-stack.s
+$ ld -z noexecstack -o exec-stack exec-stack.o
+```
+So if we have a source file without the .note.GNU-stack section this would add
+the section to the program header of the generated object file.
+
 The example  [exec-stack.s](./exec-stack.s) will be used below and if we take
 a look at the program headers for it without the section `.note.GNU-stack` added
 we see:
