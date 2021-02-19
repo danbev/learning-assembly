@@ -555,7 +555,24 @@ PF_MASKPROC  0xf000000    Unspecified
 `PT_GNU_STACK` is a p_flags member specifies the permissions on the segment
 containing the stack and is used to indicate wether the stack should be
 executable. `The absense of this header indicates that the stack will be
-executable`.
+executable`. This is not exactly true and the value of the p_flags entry might
+not be `PF_X` in which case the program header will still be there.
+For example:
+Using the example without the section in the source we compile and like this:
+```console
+$ as -o exec-stack.o exec-stack.s 
+$ ld -z execstack -o exec-stack exec-stack.o
+$ readelf -l exec-stack | grep -A1 GNU_STACK
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RWE    0x10
+```
+Notice that we have the program header but the flags are `RWE`. 
+```console
+$ ld -z noexecstack -o exec-stack exec-stack.o
+$ readelf -l exec-stack | grep -A1 GNU_STACK
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0x10
+```
 
 When assembling with as (gnu assembler) this can be specified using:
 ```
@@ -651,6 +668,18 @@ And with it added:
 ```console
 $ readelf -w -l exec-stack | grep GNU_STACK
   GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+```
+
+We can also inspect the object file using:
+```console
+$ readelf -WS exec-stack.o | grep .note.GNU-stack
+  [ 5] .note.GNU-stack   PROGBITS        0000000000000000 000059 000000 00      0   0  1
+```
+And without the section in the source this would not match.
+```console
+$ as --noexecstack -o exec-stack.o exec-stack.s
+$ readelf -WS exec-stack.o | grep .note.GNU-stack
+  [ 5] .note.GNU-stack   PROGBITS        0000000000000000 000059 000000 00      0   0  1
 ```
 
 ## No Execute (NX)
