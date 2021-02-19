@@ -506,114 +506,143 @@ a pointer to that memory to the write system call.
 
 
 ### executable stack
-The background here is that linux as allowed the stack to be executable in the
+The background here is that linux has allowed the stack to be executable in the
 past, for example for nested functions and trampoline code. I think this was
-before exploits were a real issue. But nowadays this is something that is
-prevented and linkers will add a section in the exectable. But if this section
-is missing the stack is executable. 
+before exploits were a real issue but nowadays this is something that is
+prevented as allowing the programs data or stack to be executable allows for
+code to be placed in these regions of memory and then jumped to which can be
+used in exploits.
 
-When the ld does its linking linking, it will mark the stack as executable based
-if a single object file is not marked as non-executable. So one object file
-for example an assembly source that does is not marked as non-executable would
-make the entire library/executable become marked as having an executable stack.
+The solution is that compilers can add a section to the object file which the
+linker can then detect to make the data/stack non-executable. But if this
+section is missing the data/stack area will be executable. Remember that the
+assembler will create an object file which contains information for the linker,
+and the linker will create an object file that is used by the operating system
+to load it into memory. If I recall the permission for memory is set in the page
+table so this would have to some information in the object file created by the
+linker that causes the OS to make the stack be executable.
 
-When assembling this can be specified using:
+When the ld does its linking linking, it will not add a specific program header
+if a single object file is not marked as non-executable. So an object file
+, for example an assembly source that is not marked as non-executable,
+would make the entire library/executable become marked as having an executable
+stack.
+
+For an executable file (or a shared object file) this information is in the
+program header, which is an array of structures that describes a segment that
+the system needs to handle to make a process for the program. The program
+header is only meaningful for executable and shared object files.
+This struct looks like this:
+```c
+typedef struct {
+        Elf64_Word      p_type;
+        Elf64_Word      p_flags;
+        Elf64_Off       p_offset;
+        Elf64_Addr      p_vaddr;
+        Elf64_Addr      p_paddr;
+        Elf64_Xword     p_filesz;
+        Elf64_Xword     p_memsz;
+        Elf64_Xword     p_align;
+} Elf64_Phdr;
+```
+Notice the `p_flags` which can be:
+```
+PF_X         0x1          Execute 
+PF_W         0x2          Write
+PF_R         0x4          Read
+PF_MASKPROC  0xf000000    Unspecified
+```
+`PT_GNU_STACK` is a p_flags member specifies the permissions on the segment
+containing the stack and is used to indicate wether the stack should be
+executable. `The absense of this header indicates that the stack will be
+executable`.
+
+When assembling with as (gnu assembler) this can be specified using:
 ```
 --execstack or --noexecstack assembler options 
 ```
-
-The following tool can be used to check if stack execution is required:
-```console
-$ sudo dnf install execstack
-```
-
-Example, [exec-stack.s](./exec-stack.s) without and `.not.GNU-stack` section:
-```console
-$ make exec-stack
-$ execstack exec-stack
-? exec-stack
-$ ./exec-stack 
-Trace/breakpoint trap (core dumped)
-```
-And we can inspect the section headers and see that it lacks a .not.GNU-stack.
-```console
-$ readelf -WS exec-stack.o
-There are 16 section headers, starting at offset 0x408:
-
-Section Headers:
-  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
-  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
-  [ 1] .text             PROGBITS        0000000000000000 000040 000015 00  AX  0   0  1
-  [ 2] .rela.text        RELA            0000000000000000 000280 000018 18   I 13   1  8
-  [ 3] .data             PROGBITS        0000000000000000 000055 000004 00  WA  0   0  1
-  [ 4] .bss              NOBITS          0000000000000000 000059 000000 00  WA  0   0  1
-  [ 5] .debug_line       PROGBITS        0000000000000000 000059 000041 00      0   0  1
-  [ 6] .rela.debug_line  RELA            0000000000000000 000298 000018 18   I 13   5  8
-  [ 7] .debug_info       PROGBITS        0000000000000000 00009a 00002e 00      0   0  1
-  [ 8] .rela.debug_info  RELA            0000000000000000 0002b0 0000a8 18   I 13   7  8
-  [ 9] .debug_abbrev     PROGBITS        0000000000000000 0000c8 000014 00      0   0  1
-  [10] .debug_aranges    PROGBITS        0000000000000000 0000e0 000030 00      0   0 16
-  [11] .rela.debug_aranges RELA            0000000000000000 000358 000030 18   I 13  10  8
-  [12] .debug_str        PROGBITS        0000000000000000 000110 000054 01  MS  0   0  1
-  [13] .symtab           SYMTAB          0000000000000000 000168 000108 18     14  10  8
-  [14] .strtab           STRTAB          0000000000000000 000270 00000d 00      0   0  1
-  [15] .shstrtab         STRTAB          0000000000000000 000388 000080 00      0   0  1
-Key to Flags:
-  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
-  L (link order), O (extra OS processing required), G (group), T (TLS),
-  C (compressed), x (unknown), o (OS specific), E (exclude),
-  l (large), p (processor specific)
-```
-
-And if we add the section the section:
-```console
-$ execstack exec-stack
-- exec-stack
-$ ./exec-stack 
-Segmentation fault (core dumped)
-```
-We can see that the `.not.GNU-stack` section is there:
-```console
-$ readelf -WS exec-stack.o
-There are 17 section headers, starting at offset 0x430:
-
-Section Headers:
-  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
-  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
-  [ 1] .text             PROGBITS        0000000000000000 000040 000015 00  AX  0   0  1
-  [ 2] .rela.text        RELA            0000000000000000 000298 000018 18   I 14   1  8
-  [ 3] .data             PROGBITS        0000000000000000 000055 000004 00  WA  0   0  1
-  [ 4] .bss              NOBITS          0000000000000000 000059 000000 00  WA  0   0  1
-  [ 5] .note.GNU-stack   PROGBITS        0000000000000000 000059 000000 00      0   0  1
-  [ 6] .debug_line       PROGBITS        0000000000000000 000059 000041 00      0   0  1
-  [ 7] .rela.debug_line  RELA            0000000000000000 0002b0 000018 18   I 14   6  8
-  [ 8] .debug_info       PROGBITS        0000000000000000 00009a 00002e 00      0   0  1
-  [ 9] .rela.debug_info  RELA            0000000000000000 0002c8 0000a8 18   I 14   8  8
-  [10] .debug_abbrev     PROGBITS        0000000000000000 0000c8 000014 00      0   0  1
-  [11] .debug_aranges    PROGBITS        0000000000000000 0000e0 000030 00      0   0 16
-  [12] .rela.debug_aranges RELA            0000000000000000 000370 000030 18   I 14  11  8
-  [13] .debug_str        PROGBITS        0000000000000000 000110 000054 01  MS  0   0  1
-  [14] .symtab           SYMTAB          0000000000000000 000168 000120 18     15  11  8
-  [15] .strtab           STRTAB          0000000000000000 000288 00000d 00      0   0  1
-  [16] .shstrtab         STRTAB          0000000000000000 0003a0 000090 00      0   0  1
-Key to Flags:
-  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
-  L (link order), O (extra OS processing required), G (group), T (TLS),
-  C (compressed), x (unknown), o (OS specific), E (exclude),
-  l (large), p (processor specific)
-```
-
-`PT_GNU_STACK` program header entry.  If the marking is missing, kernel or
-dynamic linker need to assume it might need executable stack.
-
-The most common reason that this fails these days is that part of the program
-is written in assembler, and the assembler code does not create a
-`.note.GNU_stack section`. If you write assembler code for GNU/Linux, you must
-always be careful to add the appropriate line to your file.
-
-For most targets, the line you want is:
+Or you can add the section to the assembly source file:
+```assembly
 ```assembly
 .section .note.GNU-stack,"",@progbits
+```
+Specifying `--noexecstack` would be the same as adding the section to the
+assembly source code.
+
+The example  [exec-stack.s](./exec-stack.s) will be used below and if we take
+a look at the program headers for it without the section `.note.GNU-stack` added
+we see:
+```console
+$ readelf -w --program-headers exec-stack
+Elf file type is EXEC (Executable file)
+Entry point 0x401000
+There are 3 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  LOAD           0x0000000000000000 0x0000000000400000 0x0000000000400000
+                 0x00000000000000e8 0x00000000000000e8  R      0x1000
+  LOAD           0x0000000000001000 0x0000000000401000 0x0000000000401000
+                 0x0000000000000015 0x0000000000000015  R E    0x1000
+  LOAD           0x0000000000002000 0x0000000000402000 0x0000000000402000
+                 0x0000000000000004 0x0000000000000004  RW     0x1000
+```
+Notice that there are only three Program Headers!
+
+And if we add the section we can find:
+```console
+$ readelf -w --program-headers exec-stack
+Elf file type is EXEC (Executable file)
+Entry point 0x401000
+There are 4 program headers, starting at offset 64
+
+Program Headers:
+  Type           Offset             VirtAddr           PhysAddr
+                 FileSiz            MemSiz              Flags  Align
+  LOAD           0x0000000000000000 0x0000000000400000 0x0000000000400000
+                 0x0000000000000120 0x0000000000000120  R      0x1000
+  LOAD           0x0000000000001000 0x0000000000401000 0x0000000000401000
+                 0x0000000000000015 0x0000000000000015  R E    0x1000
+  LOAD           0x0000000000002000 0x0000000000402000 0x0000000000402000
+                 0x0000000000000004 0x0000000000000004  RW     0x1000
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
+                 0x0000000000000000 0x0000000000000000  RW     0x10
+```
+So when have the secion there will be a program header named `GNU_STACK` and
+this executable will not be allowed to execute code in the data or stack
+section.
+
+This program header will be checked when the binary is loaded in 
+[load_elf_binary](https://elixir.bootlin.com/linux/latest/source/fs/binfmt_elf.c#L929):
+```c
+for (i = 0; i < elf_ex->e_phnum; i++, elf_ppnt++)
+		switch (elf_ppnt->p_type) {
+		case PT_GNU_STACK:
+			if (elf_ppnt->p_flags & PF_X)
+				executable_stack = EXSTACK_ENABLE_X;
+			else
+				executable_stack = EXSTACK_DISABLE_X;
+			break;
+
+...
+
+if (elf_read_implies_exec(*elf_ex, executable_stack))
+		current->personality |= READ_IMPLIES_EXEC;
+...
+```
+Notice that we only enter this if `PT_GNU_STACK` is present. So that should
+be enough to determine if an executable has a non-exeutable stack is that
+there is no PT_GNU_STACK.
+
+For example, without the section added:
+```console
+$ readelf -w -l exec-stack | grep GNU_STACK
+```
+And with it added:
+```console
+$ readelf -w -l exec-stack | grep GNU_STACK
+  GNU_STACK      0x0000000000000000 0x0000000000000000 0x0000000000000000
 ```
 
 ## No Execute (NX)
