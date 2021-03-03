@@ -25,6 +25,9 @@ exec-stack: exec-stack.o
 carry: carry.o
 	${LD} -o $@ $<
 
+zero-flag: zero-flag.o
+	${LD} -o $@ $<
+
 direction-flag: direction-flag.o
 	${LD} -o $@ $<
 

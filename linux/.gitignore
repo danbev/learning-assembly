@@ -9,3 +9,4 @@ multi
 exec-stack
 carry
 direction-flag
+zero-flag
