@@ -10,3 +10,4 @@ exec-stack
 carry
 direction-flag
 zero-flag
+div
