@@ -22,6 +22,9 @@ multi: multi.o
 exec-stack: exec-stack.o
 	${LD} -o $@ $<
 
+carry: carry.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
