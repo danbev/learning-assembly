@@ -11,3 +11,4 @@ carry
 direction-flag
 zero-flag
 div
+cmov

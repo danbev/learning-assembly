@@ -34,6 +34,9 @@ zero-flag: zero-flag.o
 direction-flag: direction-flag.o
 	${LD} -o $@ $<
 
+cmov: cmov.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
