@@ -37,6 +37,9 @@ direction-flag: direction-flag.o
 cmov: cmov.o
 	${LD} -o $@ $<
 
+function: function.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
