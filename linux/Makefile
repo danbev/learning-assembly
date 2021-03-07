@@ -40,6 +40,9 @@ cmov: cmov.o
 function: function.o
 	${LD} -o $@ $<
 
+
+float: float.o
+	${LD} -o $@ $<
 %.o: %.s
 	${AS} -g -o $@ $<
 
