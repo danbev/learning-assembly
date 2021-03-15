@@ -63,7 +63,10 @@ compares, datals
 multiple data elements during the same instruction. So one instruction can
 replace multiple.
 
-### MOVQ
+### movaps
+This instruction will move an aligned packed single precision value into an
+xmm register.
+
 So lets start very simple and see how we can place data in a register.
 ```assembly
 .data
@@ -71,6 +74,7 @@ v1: .float 1.0, 2.0, 3.0, 4.0
 ...
   movaps v1, %xmm0
 ```
+
 ```console
 (lldb) expr -f float32 -- $xmm0
 (unsigned char __attribute__((ext_vector_type(16)))) $2 = (1, 2, 3, 4)
@@ -97,3 +101,56 @@ We can inspect the values in xmm0 after this operation:
 (unsigned char __attribute__((ext_vector_type(16)))) $15 = (2, 4, 6, 8)
 ```
 
+### movapd
+This will move an aligned packed double precision value into a xmm register.
+```assembly
+  movapd v3, %xmm0    # move aligned packed double precision
+```
+```console
+(lldb) expr -f float64 -- $xmm0
+(unsigned char __attribute__((ext_vector_type(16)))) $0 = (1, 2)
+```
+
+
+### xor xmm register
+To clear/set to zero a register we can use `xorps` for packed single precsion:
+```assembly
+  xorps %xmm0, %xmm0   # xor packed single precision
+```
+
+### Integers
+We can also work with integers instead of floating point values. Remember that
+we have xmm registers that are 128 bits long. How we divide/interpret/pack
+that data is up to us. We could have two .quad  (8 bytes, 64 bits), 4 .int/.long
+(4 bytes, 32 bits), or 8 .word/.short (2 bytes, 16 bits), or 16 .byte (1 byte,
+8 bits).
+
+For example we can have a packed 128 bit value with 4 32 bit ints:
+```assembly
+i1: .int 1, 2, 3, 4
+
+  movaps i1, %xmm0  # mov aligned packed single precision (32 bit values).
+```
+Remember that we have to specify the correct instrution for the type of the
+data that we are moving.
+```console
+(lldb) expr -f uint32_t -- $xmm0
+(unsigned char __attribute__((ext_vector_type(16)))) $2 = (1, 2, 3, 4)
+```
+Add to add two of these vectors we use `addps`:
+```assembly
+  addps i2, %xmm0  # add packed double precision src, dest (result in dest)
+```
+
+We can also use the space to add 16 bytes together:
+```assembly
+i3: .byte 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+
+  xorps %xmm0, %xmm0   # xor packed single precision
+  movapd i3, %xmm0
+  paddb i3, %xmm0
+```
+```console
+(lldb) expr -f uint8_t --  $xmm0
+(unsigned char __attribute__((ext_vector_type(16)))) $12 = (0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30)
+```
