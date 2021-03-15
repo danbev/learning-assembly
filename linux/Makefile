@@ -43,6 +43,9 @@ function: function.o
 
 float: float.o
 	${LD} -o $@ $<
+
+sse: sse.o
+	${LD} -o $@ $<
 %.o: %.s
 	${AS} -g -o $@ $<
 
