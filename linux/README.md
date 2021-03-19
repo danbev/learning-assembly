@@ -804,5 +804,23 @@ zero-flag`_start:
 
 ### Direction flag
 
+## conditional set instruction (setcc)
+This instruction will conditionally set the destination operand to 0 or 1
+depending on the status flags (CF, SF, OF, ZF, and PF).
+
+An example can be found in [setne.s](./setne.s).
+
+For a real example this usage can be found in Node.js:
+```console
+  a4c1f3:	e8 58 ab fd ff       	callq  a26d50 <getauxval@plt>
+  a4c204:	48 85 c0             	test   %rax,%rax
+  a4c207:	0f 95 05 73 c8 ba 03 	setne  0x3bac873(%rip)        # 45f8a81 <_ZN4node11per_process15linux_at_secureE>
+```
+Notice that are calling `getauxval` and it returns a values which on x64 will
+be in register rax. The test is anding that regiser with itself, if the result
+is not zero then we set the value at the address relative to the value in the
+instruction pointer registry.
+
+
 ### Conditional mov
 TODO: add an example of this.
