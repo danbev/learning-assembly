@@ -46,6 +46,10 @@ float: float.o
 
 sse: sse.o
 	${LD} -o $@ $<
+
+test: test.o
+	${LD} -o $@ $<
+
 %.o: %.s
 	${AS} -g -o $@ $<
 
