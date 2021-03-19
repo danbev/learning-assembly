@@ -687,3 +687,122 @@ The no execute bit is used in CPUs to separate memory areas for either data
 storage or instructions storage. An operating system with NX support will mark
 certain areas of memory as non-exeutable.
 
+
+### sections
+We can add section as we wish:
+```assembly
+.section bajja_section
+```
+```console
+$ objdump -h tmp.o
+
+tmp.o:     file format elf64-x86-64
+
+Sections:
+Idx Name          Size      VMA               LMA               File off  Algn
+  0 .text         00000030  0000000000000000  0000000000000000  00000040  2**0
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .data         0000000a  0000000000000000  0000000000000000  00000070  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  0000000000000000  0000000000000000  0000007a  2**0
+                  ALLOC
+  3 bajja_section 00000000  0000000000000000  0000000000000000  0000007a  2**0
+                  CONTENTS, READONLY
+```
+
+### cmp and sub
+The cmp instruction will take a source and destination and subtract the
+destination with the source:
+```assembly
+  mov $11, %rax
+  mov $10, %rsi
+  cmp %rax, %rsi
+```
+This similar to `sub %rax, %rsi` only the destination %rsi will not be modfied.
+So the source is subtracted from the destination, so this will perform
+`%rsi - %rax = 10 - 11 = -1`.
+
+Remember to display rflags using `--binary or -b`:
+```console
+(lldb) expr -f b -- $rflags
+(unsigned long) $11 = 0b0000000000000000000000000000000000000000000000000000001010010111
+```
+Using `expr` allows us to use a mask to find the values that we might be
+interested in. For example, to see only the value of the carry flag:
+```console
+(lldb) expr -f b -- $rflags & 0x0001
+(unsigned long) $11 = 0b0000000000000000000000000000000000000000000000000000000000000001
+```
+When subtracting, and hence this is also true for cmp, the carry flag is set
+when the result becomes too large of a negative value. For example
+```
+0000 - 0001 = 1111 = -1
+```
+
+The flags affected by cmp/sub are CF, OF, SF, ZF, AF, and PF.
+
+The carry flag is used to determine when subtracting unsigned integers produce
+a negative value.
+How about signed integers and subtracting them, these could have valid negative
+numbers. In this case the carry flag is not useful. Instread one has to use
+the overflow flag.
+
+### test
+This instruction is very similar to `cmp` and affects the same flags in almost
+the same way with the execption of `AF`.
+
+### rflags
+
+```
+                                           11 10 9  8  7  6  5  4  3  2  1  0
++-----------------------------------------------------------------------------+
+|                                         |OF|DF|IF|TF|SF|ZF|  |AF|  |PF|  |CF|
++-----------------------------------------------------------------------------+
+
+CF = Carry        0x0001   00000000000000000000000000000001
+PF = Parity       0x0004   00000000000000000000000000000100
+AF = Adjust       0x0010   00000000000000000000000000010000
+ZF = Zero         0x0040   00000000000000000000000001000000
+SF = Sign         0x0080   00000000000000000000000010000000
+TF = Trap         0x0100   00000000000000000000000100000000
+IF = Interrupt    0x0200   00000000000000000000001000000000
+DF = Direction    0x0400   0000000000000000000001000000000
+OF = Overflow     0x0800   0000000000000000000010000000000
+```
+The above masks can be used to AND the rflags register to check values:
+```console
+(lldb) expr -f b -- $rflags & 0x0001
+```
+
+### Parity Flag
+The parity flags on x86 only looks at one byte, the least significant, and if
+the bits set are even the parity flags is set, and if it is odd then it is 0.
+
+### Adjust/Auxiliary/Auxilary Carry Flag
+The adjust flag is also called the Auxiliary flag or Auxilariy Carray flag. This
+is set if an arithmetic operation causes a borrow to occur in the four least
+significant bits. This was used for EBCDIC and is not really used anymore, but
+the cmp/sub instructions can affect these flags.
+
+### Zero flag 
+```
+$ lldb -- zero-flag
+(lldb) target create "zero-flag"
+Current executable set to 'zero-flag' (x86_64).
+(lldb) br s -n _start
+(lldb) disassemble 
+zero-flag`_start:
+    0x401000 <+0>:  mov    rax, 0x2
+->  0x401007 <+7>:  mov    rcx, 0x2
+    0x40100e <+14>: sub    rcx, rax
+(lldb) expr -f b -- $rflags & 0x0040
+(unsigned long) $0 = 0b0000000000000000000000000000000000000000000000000000000000000000
+(lldb) si
+(lldb) expr -f b -- $rflags & 0x0040
+(unsigned long) $5 = 0b0000000000000000000000000000000000000000000000000000000001000000
+```
+
+### Direction flag
+
+### Conditional mov
+TODO: add an example of this.
