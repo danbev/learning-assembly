@@ -50,6 +50,8 @@ sse: sse.o
 test: test.o
 	${LD} -o $@ $<
 
+setne: setne.o
+	${LD} -o $@ $<
 
 bcd: bcd.o
 	${LD} -melf_i386 -o $@ $<
