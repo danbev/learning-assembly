@@ -50,8 +50,15 @@ sse: sse.o
 test: test.o
 	${LD} -o $@ $<
 
-%.o: %.s
-	${AS} -g -o $@ $<
+
+bcd: bcd.o
+	${LD} -melf_i386 -o $@ $<
+
+bcd.o: bcd.s
+	${AS} -g --32 -o bcd.o bcd.s
+
+#%.o: %.s
+#	${AS} -g -o $@ $<
 
 .PHONY: clean
 clean:
