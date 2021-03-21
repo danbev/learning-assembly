@@ -46,7 +46,10 @@ or packed format to be able to perform the correct operations.
 So we would use a .byte type to store either a unpacked single BCD number or
 the same .byte could be used to store two packed BCD numbers.
 
-### Example
+### Adjust After Addition (aaa)
+This instruction adjusts the al register. It is added after an add instruction
+which adds two unpacked bcd values together and places the sum in `al`.
+
 Lets take a simple example where we add two unpacked values.
 The examples can be found in [bcd.s](../bcd.s).
 ```console
@@ -74,7 +77,11 @@ And after the addition we have the value in `al`:
 (lldb) register read -f b al
       al = 0b00001100
 ```
-And after the ascii adjust after addition:
+Notice that this addition generated 1100 which is 12. But since we are working
+with unpacked bcd values we want the result in that format. We can get that by
+using the aaa instruction:
+
+And after the addition the ascii adjust after addition (aaa):
 ```console
 (lldb) register read -f b ax
       ax = 0b0000 0001 0000 0010
