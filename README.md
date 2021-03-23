@@ -52,17 +52,19 @@ r15             | r15d          | r15w          | r15b
 These registers might be changed when making function calls and it is the
 callers responsibility to save them.
 The registers are `rax`, `rcx`, `edx`. So when calling a function if the current
-function depends on these values to. rax is used for the return value of the
-function being called, and the function being called might use rcx as a counter. 
+function depends on these values too they need to be stored on the stack.
+
+`rax` is used for the return value of the function being called, and the
+function being called might use rcx as a counter. 
 
 #### Callee saved
 These registers are preserved/saved accross function calls so if the called
-function needs to uses these registers it has to store and the restore them.
+function needs to use these registers it has to store and the restore them.
 
 ### Calling Conventions
-The C calling conventions used on 32-bit x86 processor are the following:
-CDECL, STDCALL, and FASTCALL. There is additional one named THISCALL which is
-used sometimes for C++.
+The C calling conventions used on `32-bit x86` processor are the following:
+`CDECL`, `STDCALL`, and `FASTCALL`. There is additional one named `THISCALL`
+which is used sometimes for C++.
 
 #### CDECL
 By default this is the default C calling convention used (on 32-bit systems that
@@ -95,7 +97,7 @@ Disassembly of section .text:
  8049183:	c3 
 ```
 We can see that the arguments are indeed pushed onto the stack, and we add 12
-(3*4) to the stack to remove the three arguments pushed.
+(Oxc=12) (3*4) to the stack to remove the three arguments pushed.
 
 ### STDCALL
 This similar to to CDECL convention but here the callee is responsible for
@@ -178,7 +180,7 @@ values that it saved on the stack before calling the function.
 ### Instructions
 Just to make sure that we are clear on this is that instructions are stored in
 memory and the processor runs by reading these instructions. Any data required
-by the instructions are also read/stored from memory. To keep these separate
+by the instructions are also read from memory. To keep these separate
 there are two pointers to help, the instruction pointer (rip), and the data/stack
 pointer (rsp).
 
@@ -2923,6 +2925,11 @@ Set 10 [0000 0000] [0000 0000]
 Set 11 [1111 2697] [0000 0000]
 ```
 
+The processor will look for patterns of cache misses that originate from the
+same instruction and will start prefetching.
+
+The L3 cache is only populate after a cache line is evicted from L2.
+
 ### Micro operations
 These are operations that the cpu uses to split assembler operations into
 smaller units. For example, take the following code:
@@ -2959,8 +2966,53 @@ There is an example in [cache.c](./cache.c)
 
 ```c
 #include <immintrin.h>
-unsigned __int64 __rdtscp (unsigned int * mem_addr)
+unsigned __int64 __rdtscp (unsigned int* mem_addr)
 ```
-This function will copy the the current 64 bit value of the processors time
-stamp counter into dst?
+This function will read the time stamp register and place that value in EDX, and
+EAX, and also store the value of the CPU identifier in ECX.
+The passed in mem_addr is the id of the core that the timestamp value was
+taken from.
+
+
+### Meltdown
+This exploit is specific to Intel processors and the basic idea is that we
+allocate an array of a certain size, being a multiple of the cache lines size
+which is 64KB:
+```c
+int array[256 * 64];
+```
+Next, we are going 
+```c
+  for (int i = 0; i < cache_size; i+=cache_line_size) {
+    _mm_clflush(&array[i]);
+  }
+```
+
+### Intel vs AT&T syntax
+In lldb we can specify the format to be used when using the disassemble
+command:
+```console
+(lldb) dis -F att 
+(lldb) dis -F intel 
+```
+
+In AT&T it is `source, destination` and in Intel `destination, source`.
+
+Another difference is that instructions memonics in GNU as it uses a suffix
+for the size of the data being operated on. These can sometimes be inferred but
+if you disassemble you'll see that it uses opcodes specific to the size of data.
+In Intel syntax the data operated on is instead specified using `type ptr`:
+```console
+    0x4016cd <+11>: mov    qword ptr [rbp - 0x20], rsi
+```
+So that is copying what is in rsi into the memory location identified by rbp-0x20
+which is on the local stack.
+
+And the same in AT&T would be:
+```console
+   0x4016cd <+11>: movq   %rsi, -0x20(%rbp)
+```
+And this doing the same thing but we specify the source first and then have the
+destination which is also %rbp-0x20 but written in a different way.
+
 
