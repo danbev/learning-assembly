@@ -60,12 +60,24 @@ $ docker run -ti  -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
 Hello, ARM64!
 ```
 
+### Registers
+
+
+### Calling conventions
+```
+             syscall nr  return  arg0  arg1  arg2  arg3 arg4 arg5
+arm          r7          r0      r0    r1    r2    r3   r4   r5
+arm64        x8          x0      x0    x1    x2    x3   x4   x5
+```
+
 ### System calls
 See [64-bit table](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md#tables)
 for system call numbers.
-The instruction for system calls is `svc` (system service perhaps) which take
-a system call number for the table above. The arguments the system call takes
-can also be see in the table above in the additional columns for each call.
+
+The instruction for system calls, system interrupt is `svc`
+(system service perhaps) which take a system call number for the table above.
+The arguments the system call takes can also be see in the table above in the
+additional columns for each call.
 
 
 
