@@ -824,3 +824,39 @@ instruction pointer registry.
 
 ### Conditional mov
 TODO: add an example of this.
+
+### dereferencing
+```assembly
+  mov msg, %rcx
+```
+This will move the contents located at the address msg, the size of the data
+will be 64-bits as we are moving into rax.
+```console
+(lldb) register read rcx
+     rcx = 0x00060a616a6a6162
+(lldb) register read -f s -- rcx
+     rcx = "bajja\n\x06"
+```
+
+We can put parentheses around it which is the same thing as saying that we
+want to copy the data located at the address msg.
+```assembly
+  mov (msg), %rax
+```
+```console
+(lldb) register read rax
+     rax = 0x00060a616a6a6162
+(lldb) register read -f s -- rax
+     rax = "bajja\n\x06"
+```
+
+Now if we use `$` we are saying use take the address (think & in C) of the
+label msg:
+```assembly
+  mov $msg, %rcx
+```
+```console
+(lldb) register read rax
+     rax = 0x0000000000402000  tmp`msg
+```
+
