@@ -832,10 +832,8 @@ TODO: add an example of this.
 This will move the contents located at the address msg, the size of the data
 will be 64-bits as we are moving into rax.
 ```console
-(lldb) register read rcx
-     rcx = 0x00060a616a6a6162
-(lldb) register read -f s -- rcx
-     rcx = "bajja\n\x06"
+(lldb) disassemble -F att
+0x401000 <+0>:  movq   0x402000, %rcx
 ```
 
 We can put parentheses around it which is the same thing as saying that we
@@ -843,20 +841,36 @@ want to copy the data located at the address msg.
 ```assembly
   mov (msg), %rax
 ```
+A reason for doing this is perhaps we want to add an offset to the address:
+```assembly
+  mov (msg+0), %rcx
+```
+But that is actually possible without the parenthesis.
 ```console
-(lldb) register read rax
-     rax = 0x00060a616a6a6162
-(lldb) register read -f s -- rax
-     rax = "bajja\n\x06"
+    0x401011 <+17>: movq   0x402000, %rcx
+```
+But this can be useful when we want to specify an offset for a register perhaps
+like :
+```assembly
+  0x4016cd <+11>: movq   %rsi, -0x20(%rbp)
 ```
 
-Now if we use `$` we are saying use take the address (think & in C) of the
-label msg:
+Now if we use `$` which is also use $ immediate valus like $4 would be the
+constant 4 and remember that msg is just an address and we are specifying that
+as an immediate value.
 ```assembly
   mov $msg, %rcx
 ```
+We also use $ with constants, like $4 would be the constant 4 and remember
+that msg is just an address 
 ```console
-(lldb) register read rax
-     rax = 0x0000000000402000  tmp`msg
+0x401008 <+8>:  movq   $0x402000, %rax           ; imm = 0x40200
 ```
 
+And this is the same as using `lea` to load the effective address.
+```assembly
+  lea msg, %rbx
+```
+```console
+    0x401020 <+32>: leaq   0x402000, %rbx
+```
