@@ -47,6 +47,9 @@ float: float.o
 sse: sse.o
 	${LD} -o $@ $<
 
+mmx: mmx.o
+	${LD} -o $@ $<
+
 test: test.o
 	${LD} -o $@ $<
 
@@ -59,8 +62,8 @@ bcd: bcd.o
 bcd.o: bcd.s
 	${AS} -g --32 -o bcd.o bcd.s
 
-#%.o: %.s
-#	${AS} -g -o $@ $<
+%.o: %.s
+	${AS} -g -o $@ $<
 
 .PHONY: clean
 clean:
