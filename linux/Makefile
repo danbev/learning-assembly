@@ -22,6 +22,9 @@ multi: multi.o
 div: div.o
 	${LD} -o $@ $<
 
+mul: mul.o
+	${LD} -o $@ $<
+
 exec-stack: exec-stack.o
 	${LD} -o $@ $<
 
