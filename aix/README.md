@@ -18,6 +18,47 @@ a function call.
 For system calls the syscall number goes into gpr0 and the args begin in
 gpr3.
 
+#### load immediate (li)
+Loads a constant into a register, similar to `mov $1, %rax` one would do:
+```assembly
+.data 
+message:
+  .string 'Bajja\n'
+  len = . - message
+
+.global _start
+
+.text
+_start:
+   li 0, 1           # load constant 1 into register 0 (syscall number)
+```
+This is actually not an instruction but a memonic which can be though of as a
+preprocessor macro. The assembler will interpret it and generate the correct
+instructions for the memonic. For example the `li` instruction above will
+become:
+```assembler
+addi 0, 0, 1
+```
+This might look like it is adding 1 to register 0 and then storing that in
+register 0 but gpr0 is sometimes read as 0 depending on the context and in the
+case of addi the spec says that it is 0 in this case.
+
+#### add
+```assembly
+addi 4, 3, 5
+```
+The above will add the value of register 5 to the contents of register 3 and
+then store the result in register 4.
+
+#### addi
+Add immediate
+```assembly
+addi 4, 3, 5
+```
+The above will add 5 to the contents of register 3 and then store the result
+in register 4. Notice that we are adding the constant 5 and not the contents of
+register 5.
+
 #### or 
 ```assembly
 or rA, rS, rB
@@ -41,4 +82,9 @@ is stored in gpr9. Is this some sort of way to move the contents between
 registers? I mean or with itself will not alter the content (not like xor which
 would be the same thing as setting it to zero.
 
+
+#### mtvsrd
+```assembly
+mtvsrd  32,14
+```
 
