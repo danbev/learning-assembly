@@ -1069,6 +1069,7 @@ print the c-string:
 ### memory read format values
 The following are the supported values for the -f <format> argument: 
 ```console
+(lldb) expr -f options -- 10
 'B' or "boolean"
 'b' or "binary"
 'y' or "bytes"
