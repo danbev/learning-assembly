@@ -1215,7 +1215,9 @@ not and to zero, so temp > 0 and ZF will be set to 0.
 
 
 ### Processor architectures
-IBM Power architecture is a reduced instruction set computing (RISC). It includes POWER, PowerPC and Cell processors.
+IBM Power architecture is a reduced instruction set computing (RISC). It
+includes Performance optimization With Enhanced RISC) POWER, PowerPC and Cell
+processors.
 
 Advanded RISC Machines (ARM) design RISC processors.
 
@@ -1665,9 +1667,32 @@ architectures have different requirements and some might not even be able to
 handle unaligned memory accesses, while others might have to perform inefficient
 operations to handle them which incurs a performance penaltiy.
 
-So for a word size (2 bytes, 16 bits):
+A byte (8 bits) can be stored anywhere:
+```console
+Address hex  Address binary    
+0000 0000    0000 0000      
+0000 0001    0000 0001      
+0000 0002    0000 0010
+0000 0003    0000 0011
+0000 0004    0000 0100
+0000 0005    0000 0101
+0000 0006    0000 0110
+0000 0007    0000 0111
+0000 0008    0000 1000
+0000 0009    0000 1001
+0000 000a    0000 1010
+0000 000b    0000 1011
+0000 000c    0000 1100
+0000 000d    0000 1101
+0000 000e    0000 1110
+0000 000f    0000 1111
+0000 0010    0001 0000
+0000 0011    0001 0001
 ```
-Address hex    binary    
+
+For a word (2 bytes, 16 bits):
+```
+Address hex  Address  binary    
 0000 0000    0000 0000      Divisable by 2    
 0000 0001    0000 0001      Hex values: 0, 4, 8, a, c, e
 ----------------------      Bin value: least significant bit 0
@@ -1695,6 +1720,59 @@ Address hex    binary
 0000 0010    0001 0000
 0000 0011    0001 0001
 ```
+
+For a double word (4 bytes, 32 bits):
+```
+Address hex  Address  binary    
+0000 0000    0000 0000      Divisable by 2    
+0000 0001    0000 0001      Hex values: 0, 4, 8, a, c, e
+0000 0002    0000 0010      Bin value: least significant bit 00
+0000 0003    0000 0011
+----------------------
+0000 0004    0000 0100
+0000 0005    0000 0101
+0000 0006    0000 0110
+0000 0007    0000 0111
+----------------------
+0000 0008    0000 1000
+0000 0009    0000 1001
+0000 000a    0000 1010
+0000 000b    0000 1011
+----------------------
+0000 000c    0000 1100
+0000 000d    0000 1101
+0000 000e    0000 1110
+0000 000f    0000 1111
+----------------------
+0000 0010    0001 0000
+0000 0011    0001 0001
+```
+
+For a quad word (8 bytes, 32 bits):
+```
+Address hex  Address  binary    
+0000 0000    0000 0000      Divisable by 2    
+0000 0001    0000 0001      Hex values: 0, 4, 8, a, c, e
+0000 0002    0000 0010      Bin value: least significant bit 000
+0000 0003    0000 0011
+0000 0004    0000 0100
+0000 0005    0000 0101
+0000 0006    0000 0110
+0000 0007    0000 0111
+----------------------
+0000 0008    0000 1000
+0000 0009    0000 1001
+0000 000a    0000 1010
+0000 000b    0000 1011
+0000 000c    0000 1100
+0000 000d    0000 1101
+0000 000e    0000 1110
+0000 000f    0000 1111
+----------------------
+0000 0010    0001 0000
+0000 0011    0001 0001
+```
+
 So some architectures might crash or handle a memory access inefficiently if
 we were to store a value on an unaligned memory address.
 
@@ -1710,7 +1788,7 @@ section .data
 ```
 The above example can be found in [align.asm](./nasm/linux/align.asm).
 Notice that the instruction is `mov` and it operates on a specific size, the
-size of register `ax` is 16 bits which matches our variable `nr` size.
+size of register `ax` which is 16 bits and which matches our variable `nr` size.
 
 The instruction to read the value will look like this:
 ```
@@ -1755,7 +1833,6 @@ address is the last byte of an address row the CPU would have to read another
 row and then shift the bits into the value placed on the data bus. But if we
 place the value on a starting address that is divisable by the type's size then
 the above situation will not happen.
-be read but this 
 
 When we want to read the value of this memory location into a register, the
 cpu must take the virtual address to look up the physical address. This does
@@ -1782,6 +1859,28 @@ is where the `D` comes from.
 ```
 TODO
 ```
+
+#### .align directive
+This directive takes a number which is specifies the alignment of the following
+instruction or data:
+```assembly
+.align 4
+```
+The value must be a power of 2 (2, 4, 8, 16, 32, 64...).
+So the instruction or data immediately following this directive will have a
+memory address that is a multiple of 4. The extra space between the .align
+directive and the previous instruction is padded with NULL instructions like
+nop or equivalent.
+
+#### .p2align
+Example:
+```assembly
+.p2align 5,,31
+```
+This will align code/data on a 2⁵ (32 byte boundry). The second value which is
+empty in our case is the expression used for padding. The last expression, 31
+is the maximum number of bytes for padding.
+
 
 ### Load Affective Address (lea)
 ```console
