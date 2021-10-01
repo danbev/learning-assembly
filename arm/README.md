@@ -1,11 +1,13 @@
 ### ARM Assembly
 ARM is a Reduced Instruction Set Computing (RISC) processor which is different
 from Intel which are Complex Instruction Set Computing (CISC) processors.
+Simpler instructions tend to consume less power and is a reason for ARM being
+used in smaller embedded devices.
 
-It as more general purpose registers than CISC processors and have around 100
+It has more general purpose registers than CISC processors and have around 100
 instructions.
 
-ARM uses LOAD/STORE memory model for memory access so an operation will first
+ARM uses a LOAD/STORE memory model for memory access so an operation will first
 have to load a value into a register, operate on that value, and then store it
 back to memory.
 
@@ -24,13 +26,14 @@ and some are still 32-bits long.
 ### Thumb2 mode
 My understanding of this is that you have to choose if you use ARM mode or
 Thumb mode when writing code. Thumb2 adds more instructions to Thumb mode so
-that it is almost on par with Arm mode, but also adds a new assembly syntax
+that it is almost on par with ARM mode, but also adds a new assembly syntax
 to allow for writing code in a unified way and then deciding on the mode at
 assemble time. The is called Unified Assembly Language (UAL).
 
 ### ARM versions
 ```
 ARM Family                ARM architecture
+--------------------------------------------------------
 ARM7                      ARM v4
 ARM9                      ARM v5
 ARM11                     ARM v6
@@ -75,17 +78,20 @@ See [64-bit table](https://chromium.googlesource.com/chromiumos/docs/+/master/co
 for system call numbers.
 
 The instruction for system calls, system interrupt is `svc`
-(system service perhaps) which take a system call number for the table above.
+(system service perhaps) which takes a system call number for the table above.
 The arguments the system call takes can also be see in the table above in the
 additional columns for each call.
-
-
 
 ### load address (ldr)
 This is used to load the address, like leaq in x86_64. The `=` sign is used
 in this case:
 ```assembly
     ldr     x1, =msg
+```
+
+The following example loads the address in r0 into ra:
+```assembly
+    ldr     ra, [r0]
 ```
 
 ### QEMU
@@ -112,4 +118,4 @@ Hello, ARM64!
 ```
 
 ### Microprocessor without Interlocked Pipelined Stages (MIPS)
-
+Is a RISC instruction set architecture (ISA).
