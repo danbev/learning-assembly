@@ -89,7 +89,8 @@ in this case:
     ldr     x1, =msg
 ```
 
-The following example loads the address in r0 into ra:
+The following example loads the value found in the memory location in r0 into
+ra:
 ```assembly
     ldr     ra, [r0]
 ```
