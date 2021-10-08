@@ -52,7 +52,7 @@ $ docker build -t arm-assembly .
 
 ### Run the container
 ```console
-$ docker run -ti  -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
+$ docker run --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -ti -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
 ```
 
 ### Compiling and linking
