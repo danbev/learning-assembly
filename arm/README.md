@@ -63,7 +63,62 @@ $ docker run -ti  -v${PWD}/src:/src:Z -w="/src" arm-assembly sh
 Hello, ARM64!
 ```
 
+### objdump (arch64-linux-gnu)
+```console
+$ aarch64-linux-gnu-objdump -s -d first
+
+first:     file format elf64-littleaarch64
+
+Contents of section .text:
+ 4000b0 200080d2 e1000058 02010058 080880d2   ......X...X....
+ 4000c0 010000d4 000080d2 a80b8052 010000d4  ...........R....
+ 4000d0 e0004100 00000000 06000000 00000000  ..A.............
+Contents of section .data:
+ 4100e0 42616a6a 610a                        Bajja.          
+
+Disassembly of section .text:
+
+00000000004000b0 <_start>:
+  4000b0:	d2800020 	mov	x0, #0x1                   	// #1
+  4000b4:	580000e1 	ldr	x1, 4000d0 <_start+0x20>
+  4000b8:	58000102 	ldr	x2, 4000d8 <_start+0x28>
+  4000bc:	d2800808 	mov	x8, #0x40                  	// #64
+  4000c0:	d4000001 	svc	#0x0
+  4000c4:	d2800000 	mov	x0, #0x0                   	// #0
+  4000c8:	52800ba8 	mov	w8, #0x5d                  	// #93
+  4000cc:	d4000001 	svc	#0x0
+  4000d0:	004100e0 	.word	0x004100e0
+  4000d4:	00000000 	.word	0x00000000
+  4000d8:	00000006 	.word	0x00000006
+  4000dc:	00000000 	.word	0x00000000
+
+```
+
+### Instructions
+Are 32 bits in size (for both 32 and 64 bit processors).
+
 ### Registers
+A64 provides 31 general purpose registers and each can be used as a 64-bit
+register in which case the name of the register starts with an `x`. So we have
+x0-x30 (can be upper or lower case) to use.
+These register can also be used as 32-bit register and the one uses `w` as the
+name of them.
+
+Note that the type of register used will impact the instruction in which the
+register is used.
+
+```
+x0-x7                Arguments to functions and return values.
+x8                   For syscalls the number goes into this register.
+x9-x15               For local variable.
+x16-x18              Used for IPC and platform values.
+x19-x28              Caller saved
+x29                  Frame register (like rbp I think)
+x30                  Link Register (return address for function calls)
+SP/XZR               The stack pointer for instruction dealing with the stack
+                     and zero register otherwise.
+PC                   The program counter.
+```
 
 
 ### Calling conventions
