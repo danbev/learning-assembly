@@ -91,8 +91,22 @@ Disassembly of section .text:
   4000d4:	00000000 	.word	0x00000000
   4000d8:	00000006 	.word	0x00000006
   4000dc:	00000000 	.word	0x00000000
-
 ```
+Notice that:
+```assembly
+    ldr     x1, =msg    /* buf */
+```
+got assembled into:
+```
+  4000b4:	580000e1 	ldr	x1, 4000d0 <_start+0x20>
+```
+The max size of an immediate value is 16-bits, and that becomes an issue when
+we need use 64 bit addresses and move them into registers. The register can
+handle 64 bits but not the opcode parameter. But what is can do is use a value
+relative to the current instruction pointer and this is what is happening here.
+We are telling the processor to use the value at 4000d0 which contains a pointer
+to the data, in this case the string 'bajja'.
+Notice that this is in the .text segment following the code of the function.
 
 ### Instructions
 Are 32 bits in size (for both 32 and 64 bit processors).
