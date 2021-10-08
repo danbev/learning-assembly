@@ -151,6 +151,18 @@ The instruction for system calls, system interrupt is `svc`
 The arguments the system call takes can also be see in the table above in the
 additional columns for each call.
 
+### mov
+Apperently mov is not an arm instruction but an alias. So when we write
+```assembly
+  mov   x0, #4
+  mov   x1, x0
+```
+The assembler will expand that to:
+```asssembly
+  4000c4:	d2800080 	movz	x0, #0x4
+  4000c8:	aa0003e1 	orr	x1, xzr, x0
+```
+
 ### load address (ldr)
 This is used to load the address, like leaq in x86_64. The `=` sign is used
 in this case:
