@@ -112,7 +112,7 @@ x0-x7                Arguments to functions and return values.
 x8                   For syscalls the number goes into this register.
 x9-x15               For local variable.
 x16-x18              Used for IPC and platform values.
-x19-x28              Caller saved
+x19-x28              Callee saved
 x29                  Frame register (like rbp I think)
 x30                  Link Register (return address for function calls)
 SP/XZR               The stack pointer for instruction dealing with the stack
