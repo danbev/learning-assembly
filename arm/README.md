@@ -163,6 +163,15 @@ The assembler will expand that to:
   4000c8:	aa0003e1 	orr	x1, xzr, x0
 ```
 
+### add
+A very basic [add](./src/add.s):
+```
+$ make add
+$ qemu-aarch64 add
+$ echo $?
+5
+```
+
 ### load address (ldr)
 This is used to load the address, like leaq in x86_64. The `=` sign is used
 in this case:
