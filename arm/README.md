@@ -158,6 +158,42 @@ This is used for system interrupt, for example calling exit:
     mov     x8, #93     /* exit syscall #93 */
     svc     #0          
 ```
+To me it makes sense that the exist status code is passed ion register x0, but
+it is not clear to me why the system call number, #93 above, is passed in
+register x8. This is just a calling convention and we can see the conventions
+in the syscall man page:
+```console
+Arch/ABI    Instruction           System  Ret  Ret  Error    Notes
+                                         call #  val  val2
+       ───────────────────────────────────────────────────────────────────
+       alpha       callsys               v0      v0   a4   a3       1, 6
+       arc         trap0                 r8      r0   -    -
+       arm/OABI    swi NR                -       r0   -    -        2
+       arm/EABI    swi 0x0               r7      r0   r1   -
+       arm64       svc #0                w8      x0   x1   -
+       blackfin    excpt 0x0             P0      R0   -    -
+       i386        int $0x80             eax     eax  edx  -
+       ia64        break 0x100000        r15     r8   r9   r10      1, 6
+       m68k        trap #0               d0      d0   -    -
+       microblaze  brki r14,8            r12     r3   -    -
+       mips        syscall               v0      v0   v1   a3       1, 6
+       nios2       trap                  r2      r2   -    r7
+       parisc      ble 0x100(%sr2, %r0)  r20     r28  -    -
+       powerpc     sc                    r0      r3   -    r0       1
+       powerpc64   sc                    r0      r3   -    cr0.SO   1
+       riscv       ecall                 a7      a0   a1   -
+       s390        svc 0                 r1      r2   r3   -        3
+       s390x       svc 0                 r1      r2   r3   -        3
+       superh      trap #0x17            r3      r0   r1   -        4, 6
+       sparc/32    t 0x10                g1      o0   o1   psr/csr  1, 6
+       sparc/64    t 0x6d                g1      o0   o1   psr/csr  1, 6
+       tile        swint1                R10     R00  -    R01      1
+       x86-64      syscall               rax     rax  rdx  -        5
+       x32         syscall               rax     rax  rdx  -        5
+       xtensa      syscall               a2      a2   -    -
+```
+
+
 The argument to `svc` is mandatory but is up to the handler how to use it (I
 think).
 
