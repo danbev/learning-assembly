@@ -10,6 +10,12 @@ add: add.o
 add.o: src/add.s
 	aarch64-linux-gnu-as -g -o $@ $<
 
+xzr: xzr.o
+	aarch64-linux-gnu-ld -g -o $@ $<
+
+xzr.o: src/xzr.s
+	aarch64-linux-gnu-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<

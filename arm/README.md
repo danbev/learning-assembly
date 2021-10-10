@@ -151,6 +151,38 @@ The instruction for system calls, system interrupt is `svc`
 The arguments the system call takes can also be see in the table above in the
 additional columns for each call.
 
+
+### xzr register
+Is a register and it's value is always zero.
+```console
+Disassembly of section .text:
+
+0000000000400078 <_start>:
+  400078:	d2800000 	mov	x0, #0x0                   	// #0
+  40007c:	aa1f03e0 	mov	x0, xzr
+  400080:	aa1f03e0 	mov	x0, xzr
+  400084:	d2800ba8 	mov	x8, #0x5d                  	// #93
+  400088:	d4000001 	svc	#0x0
+```
+Note that `movz` will move the immediate and then zero out the rest of the bits
+are set to zero in the destination register.
+And without aliases we get:
+```console
+$ aarch64-linux-gnu-objdump -d -M no-aliases xzr
+
+xzr:     file format elf64-littleaarch64
+
+
+Disassembly of section .text:
+
+0000000000400078 <_start>:
+  400078:	d2800000 	movz	x0, #0x0
+  40007c:	aa1f03e0 	orr	x0, xzr, xzr
+  400080:	aa1f03e0 	orr	x0, xzr, xzr
+  400084:	d2800ba8 	movz	x8, #0x5d
+  400088:	d4000001 	svc	#0x0
+```
+
 ### svc (supervisor call)
 This is used for system interrupt, for example calling exit:
 ```assembly
