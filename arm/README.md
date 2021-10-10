@@ -147,9 +147,20 @@ See [64-bit table](https://chromium.googlesource.com/chromiumos/docs/+/master/co
 for system call numbers.
 
 The instruction for system calls, system interrupt is `svc`
-(system service perhaps) which takes a system call number for the table above.
+(supervisor call) which takes a system call number for the table above.
 The arguments the system call takes can also be see in the table above in the
 additional columns for each call.
+
+### svc (supervisor call)
+This is used for system interrupt, for example calling exit:
+```assembly
+    mov     x0, #0      /* status */
+    mov     x8, #93     /* exit syscall #93 */
+    svc     #0          
+```
+The argument to `svc` is mandatory but is up to the handler how to use it (I
+think).
+
 
 ### mov
 Apperently mov is not an arm instruction but an alias. So when we write
