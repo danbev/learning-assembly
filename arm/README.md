@@ -264,6 +264,9 @@ ra:
     ldr     ra, [r0]
 ```
 
+### branch
+An example of conditional branching can be found in [branch](../src/branch.s).
+
 ### QEMU
 Machine emulator.
 

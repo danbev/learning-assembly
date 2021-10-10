@@ -10,6 +10,12 @@ add: add.o
 add.o: src/add.s
 	aarch64-linux-gnu-as -g -o $@ $<
 
+branch: branch.o
+	aarch64-linux-gnu-ld -g -o $@ $<
+
+branch.o: src/branch.s
+	aarch64-linux-gnu-as -g -o $@ $<
+
 xzr: xzr.o
 	aarch64-linux-gnu-ld -g -o $@ $<
 
