@@ -22,6 +22,12 @@ xzr: xzr.o
 xzr.o: src/xzr.s
 	aarch64-linux-gnu-as -g -o $@ $<
 
+ldr: ldr.o
+	aarch64-linux-gnu-ld -g -o $@ $<
+
+ldr.o: src/ldr.s
+	aarch64-linux-gnu-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<
