@@ -28,6 +28,12 @@ ldr: ldr.o
 ldr.o: src/ldr.s
 	aarch64-linux-gnu-as -g -o $@ $<
 
+func: func.o
+	aarch64-linux-gnu-ld -g -o $@ $<
+
+func.o: src/func.s
+	aarch64-linux-gnu-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<
