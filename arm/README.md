@@ -267,6 +267,18 @@ ra:
 ### branch
 An example of conditional branching can be found in [branch](../src/branch.s).
 
+### Store Register (STR)
+This command stores the contents of a register onto the stack.
+```assembly
+  str x0, [SP, #-16]!
+```
+Notice the `!` which is the for register write-back. So SP is used as the base
+register and 16 is subtracted from that, and SP is also updated with that value.
+
+So what this is doing is substracting 16 from SP and updating SP, then
+copying x0 into that location.
+
+
 ### QEMU
 Machine emulator.
 
