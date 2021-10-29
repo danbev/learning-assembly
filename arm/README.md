@@ -304,3 +304,13 @@ Hello, ARM64!
 
 ### Microprocessor without Interlocked Pipelined Stages (MIPS)
 Is a RISC instruction set architecture (ISA).
+
+
+### armasm
+Needs to be [downloaded](https://developer.arm.com/tools-and-software/embedded/arm-compiler/downloads/version-6)
+and installed.
+
+To start using Arm Compiler for Embedded 6.17:
+```console
+- Create a suite sub-shell using /home/danielbevenius/ArmCompilerforEmbedded6.17/bin/suite_exec bash
+```

@@ -8,7 +8,8 @@ add: add.o
 	aarch64-linux-gnu-ld -g -o $@ $<
 
 add.o: src/add.s
-	aarch64-linux-gnu-as -g -o $@ $<
+	#aarch64-linux-gnu-as -g -o $@ $<
+	armasm -g -o $@ $<
 
 branch: branch.o
 	aarch64-linux-gnu-ld -g -o $@ $<
@@ -20,6 +21,12 @@ xzr: xzr.o
 	aarch64-linux-gnu-ld -g -o $@ $<
 
 xzr.o: src/xzr.s
+	aarch64-linux-gnu-as -g -o $@ $<
+
+stack: stack.o
+	aarch64-linux-gnu-ld -g -o $@ $<
+
+stack.o: src/stack.s
 	aarch64-linux-gnu-as -g -o $@ $<
 
 ldr: ldr.o

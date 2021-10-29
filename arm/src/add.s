@@ -1,4 +1,4 @@
-.data
+AREA |.text|, CODE,READONLY 
 
 .text
 
