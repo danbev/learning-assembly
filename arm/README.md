@@ -314,3 +314,18 @@ To start using Arm Compiler for Embedded 6.17:
 ```console
 - Create a suite sub-shell using /home/danielbevenius/ArmCompilerforEmbedded6.17/bin/suite_exec bash
 ```
+
+
+#### Directives
+```
+ASM                    GNU
+AREA                   .sect
+EQU                    .equ
+DCB                    .byte
+DCW                    .half
+DCD                    .word
+SPACE                  .space
+END                    .end
+RN                     .asg
+```
+EQU comes from equate directive.
