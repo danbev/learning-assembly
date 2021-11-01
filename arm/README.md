@@ -317,6 +317,12 @@ To start using Arm Compiler for Embedded 6.17:
 
 
 #### Directives
+Just keep in mind that these are directives that the specific assembler uses
+and are not part of the instructions set. So we can choose use either armasm or
+or as (GNU assembler) to write our programs and they only understand their own
+directives.
+
+armasm and GNU as directives:
 ```
 ASM                    GNU
 AREA                   .sect
