@@ -7,7 +7,9 @@ _start:
   mov r1, #2
   str r1, [r0]
   //mov r0, #1
-  b   _start
+
+stop:
+  b   stop
 
 .data
 A: .space 4
