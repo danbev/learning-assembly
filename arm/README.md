@@ -231,6 +231,14 @@ think).
 
 
 ### mov
+```
+mov{S}{cond} Rd, Operand2
+mov{cond} Rd, #imm16
+```
+If `S` is specified then the conditional flags are updated as part of the
+operation.
+
+
 Apperently mov is not an arm instruction but an alias. So when we write
 ```assembly
   mov   x0, #4
@@ -268,7 +276,7 @@ ra:
 An example of conditional branching can be found in [branch](../src/branch.s).
 
 ### Store Register (STR)
-This command stores the contents of a register onto the stack.
+This command stores the contents of a register into memory:
 ```assembly
   str x0, [SP, #-16]!
 ```
