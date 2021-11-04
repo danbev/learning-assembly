@@ -92,17 +92,26 @@ Disassembly of section .text:
   4000d8:	00000006 	.word	0x00000006
   4000dc:	00000000 	.word	0x00000000
 ```
-Notice that:
+Notice the `=mesg` here:
 ```assembly
     ldr     x1, =msg    /* buf */
 ```
-got assembled into:
+The `=` sign in this case indicates an LDR pseudo instruction. msg is defined
+in first.s as:
+```assembler
+msg:
+    .ascii        "Bajja\n"
+```
+And `msg` is a label which is an address so it would be 64 bits when using a
+64-bit processor. So without the `=` sign the compiler would see a value that
+is not a 16-bit immediate value trying to be loaded into x1. But with the `=`
+sign the compiler will change this instruction to :
 ```
   4000b4:	580000e1 	ldr	x1, 4000d0 <_start+0x20>
 ```
 The max size of an immediate value is 16-bits, and that becomes an issue when
 we need use 64 bit addresses and move them into registers. The register can
-handle 64 bits but not the opcode parameter. But what is can do is use a value
+handle 64 bits but not the opcode parameter. But what it can do is use a value
 relative to the current instruction pointer and this is what is happening here.
 We are telling the processor to use the value at 4000d0 which contains a pointer
 to the data, in this case the string 'bajja'.
@@ -265,6 +274,7 @@ in this case:
 ```assembly
     ldr     x1, =msg
 ```
+The `=` sign in this case means to use the LDR pseudo instruction.
 
 The following example loads the value found in the memory location in r0 into
 ra:
