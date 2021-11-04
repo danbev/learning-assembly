@@ -353,3 +353,51 @@ END                    .end
 RN                     .asg
 ```
 EQU comes from equate directive.
+
+
+### arm-none-eabi-as
+This can be used to cross compilation of arm assembly programs and allows for
+exploring 32 bit arm code.
+
+For example, there is a [space.s](./src/space.s) program that we can compile
+using:
+```console
+$ make space
+arm-none-eabi-as -g -o space.o src/space.s
+arm-none-eabi-ld -g -o space space.o
+```
+This can then be run using:
+```console
+$ qemu-arm ./space
+```
+That is not very helpful though as nothing will happen. What we can do instead
+is specify that the emulator should halt:
+```console
+$ qemu-arm -singlestep -g 7777 space
+```
+`7777` is the port that we can then use to connector using gdb:
+```console
+$ arm-none-eabi-gdb
+(gdb) file space
+(gdb) target remote localhost:7777
+Remote debugging using localhost:7777
+_start () at src/space.s:6
+6	  ldr r0, =A
+
+// stepping/inspecting...
+
+(gdb) disassemble 
+Dump of assembler code for function _start:
+   0x00008000 <+0>:	ldr	r0, [pc, #8]	; 0x8010 <_start+16>
+   0x00008004 <+4>:	mov	r1, #2
+   0x00008008 <+8>:	str	r1, [r0]
+=> 0x0000800c <+12>:	b	0x8000 <_start>
+   0x00008010 <+16>:	andeq	r8, r1, r4, lsl r0
+End of assembler dump.
+
+(gdb)
+(gdb) x $r0
+0x18014:	0x00000002
+
+(gdb) kill
+```

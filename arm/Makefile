@@ -41,6 +41,12 @@ func: func.o
 func.o: src/func.s
 	aarch64-linux-gnu-as -g -o $@ $<
 
+space: space.o
+	arm-none-eabi-ld -g -o $@ $<
+
+space.o: src/space.s
+	arm-none-eabi-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<
