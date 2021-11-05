@@ -412,7 +412,7 @@ Size can also be `LDRB` for a 8-bits, `LDRH` for 16-bits (Halfword), `LDRSB`
 for signed byte, `LDRSH` signed halfword, and `LDM` for multiple words.
 The addressing modes can have a base register, and offset, and a shift
 operation:
-```
+```assembly
     dest           base     shift operation
        ↓             ↓       ↓
   ldr r9,         [r12, r8, LSR #2]
@@ -423,3 +423,35 @@ The offset is added to the base, so r12 + r8 * 4. So lets say the base address
 contains the address to a struct, r8 is a member of the struct which is an
 array, then we could index values in the array using the shift I think.
 
+### str (arm)
+Takes a value from a register and stores i in memory.
+```assembly
+
+  str r0, [r1]
+
+r0: 0xaabbccdd             r1: 0x00008000 ------> 0x0000800: 0xdd
+                                                  0x0000801: 0xcc
+                                                  0x0000802: 0xbb
+                                                  0x0000803: 0xaa
+```
+We can also add an increment operand to the str instruction:
+```
+  str r0, [r1], #4
+
+r0: 0xaabbccdd             r1: 0x00008004 --+     0x0000800: 0xdd
+                                            |     0x0000801: 0xcc
+                                            |     0x0000802: 0xbb
+                                            |     0x0000803: 0xaa
+                                            +---→ 0x0000804: 0x00
+```
+Notice that after the instruction compoletes r1 has now been incremented.
+
+```assembly
+  r1, [r0, #4]!
+```
+r1 will contain the value or r0+4, and r0 will be updated to contain r0+4.
+
+```assembly
+  r1, [r0], #4
+```
+r1 will contain the value or r0, and r0 will be updated to contain r0+4.
