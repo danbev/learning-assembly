@@ -419,9 +419,10 @@ operation:
                          ↑       ↑
                        offset   immediate value
 ```
-The offset is added to the base, so r12 + r8 * 4. So lets say the base address
-contains the address to a struct, r8 is a member of the struct which is an
-array, then we could index values in the array using the shift I think.
+The shifted offset is added to the base, so r12 + r8 * 4 and this is called the
+effective address. So lets say the base address contains the address to a
+struct, r8 is a member of the struct which is an array, then we could index
+values in the array using the shift I think.
 
 ### str (arm)
 Takes a value from a register and stores i in memory.
@@ -455,3 +456,12 @@ r1 will contain the value or r0+4, and r0 will be updated to contain r0+4.
   r1, [r0], #4
 ```
 r1 will contain the value or r0, and r0 will be updated to contain r0+4.
+
+### pre-indexed addressing
+```
+  lrd{size}{cond} <Rd>, [<Rn>, <offset>] {!}
+                         {effecitve addr}
+
+! = should the effective address be written back into Rn, without this Rn will
+    be unchanged.
+```
