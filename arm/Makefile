@@ -47,6 +47,12 @@ space: space.o
 space.o: src/space.s
 	arm-none-eabi-as -g -o $@ $<
 
+rename: rename.o
+	arm-none-eabi-ld -g -o $@ $<
+
+rename.o: src/rename.s
+	arm-none-eabi-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<
