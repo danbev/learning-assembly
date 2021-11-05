@@ -480,3 +480,45 @@ r0: 0xaabbccdd             r1: 0x00008000 ------> 0x0000800: 0xdd
                                                   0x0000802: 0xbb
                                                   0x0000803: 0xaa
 ```
+
+### instruction encoding
+
+The instruction encoding for a 32-bit instruction looks like this:
+```
+ 31   29  27  25  23  21  19  17  15  13  11  9  7  5  3  1
+ +---------------------------------------------------------+
+ | Cond  |0|0|I| opcode|S| Op1 | Dest |   Operand 2        |
+ +---------------------------------------------------------+
+    30  28  26  24  22  20  18 16  14  12  10  8  6  4  2  0
+
+Data processing instruction: bit 26 and 27: 00
+opcode: the instruction, add, sub, mov, cmp etc.
+I: is the immediate bit. If this is 0 then Operand 2 is a register, and if this
+   bit is 1 Operand 2 is an immediate value.
+Operand 2: 12-bits. 2¹²=4096, so we only have values in the range 0-4096 but
+ARM does not use this value as an 12-bit number!
+Instead what is does is that it uses an 8bit value with a 4-bits rotate value
+2⁴ = 16.
+
+ 11   9   7   5   3   1
+ +-----------------------+
+ |Rotate| Immediate      |
+ +-----------------------+
+   10   8   6   4   2   0
+
+11-8 Rotate bits
+7-0  Immediate bits
+```
+For example:
+```
+                        mov r0, #3, 2
+
+3 = 0000 0000 0000 0000 0000 0000 0000 0011
+Rotate that binary 2 give us:
+1100 0000 0000 0000 0000 0000 0000 0000
+which is -1073741824 decimal
+```
+And we can inspect the generated instruction using objdump:
+
+800c:	e3a00103 	mov	r0, #-1073741824	; 0xc0000000
+```
