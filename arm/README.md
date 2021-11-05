@@ -445,7 +445,7 @@ r0: 0xaabbccdd             r1: 0x00008004 --+     0x0000800: 0xdd
                                             |     0x0000803: 0xaa
                                             +---→ 0x0000804: 0x00
 ```
-Notice that after the instruction compoletes r1 has now been incremented.
+Notice that after the instruction completes r1 has now been incremented.
 
 ```assembly
   r1, [r0, #4]!
@@ -459,9 +459,24 @@ r1 will contain the value or r0, and r0 will be updated to contain r0+4.
 
 ### pre-indexed addressing
 ```
-  lrd{size}{cond} <Rd>, [<Rn>, <offset>] {!}
+  ldr{size}{cond} <Rd>, [<Rn>, <offset>] {!}
                          {effecitve addr}
 
 ! = should the effective address be written back into Rn, without this Rn will
     be unchanged.
+```
+
+### post-indexed addressing
+This is the same as we saw previously where after the str (or ldr) completes
+Rn is incremented. Notice that this only says incremented, and this differs
+from `!` where the effective address is written back into `Rn`.
+```
+  str{size}{cond} <Rd>, [<Rn>], <offset>
+
+  str r0, [r1], #4
+
+r0: 0xaabbccdd             r1: 0x00008000 ------> 0x0000800: 0xdd
+                                                  0x0000801: 0xcc
+                                                  0x0000802: 0xbb
+                                                  0x0000803: 0xaa
 ```
