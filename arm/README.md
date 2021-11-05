@@ -401,3 +401,25 @@ End of assembler dump.
 
 (gdb) kill
 ```
+
+### ldr (arm)
+Takes a value in memory and writes it to a regiser:
+```
+LDR{size}{cond} <Rd>, <addressing mode>
+```
+Without a size specified the will be a 32-bit write.
+Size can also be `LDRB` for a 8-bits, `LDRH` for 16-bits (Halfword), `LDRSB`
+for signed byte, `LDRSH` signed halfword, and `LDM` for multiple words.
+The addressing modes can have a base register, and offset, and a shift
+operation:
+```
+    dest           base     shift operation
+       ↓             ↓       ↓
+  ldr r9,         [r12, r8, LSR #2]
+                         ↑       ↑
+                       offset   immediate value
+```
+The offset is added to the base, so r12 + r8 * 4. So lets say the base address
+contains the address to a struct, r8 is a member of the struct which is an
+array, then we could index values in the array using the shift I think.
+
