@@ -532,3 +532,9 @@ Tells the processor to jump to this very instruction, that is. execute it
 over and over in an endless loop. This is used often at the end of
 a microcontroller programs, as it prevents the processor from executing random
 data that is located in flash memory after the program.
+
+The following instruction is also an unconditional branch:
+```assemlby
+  b.n .
+```
+The `.n` suffix is telling the assembler to encode this instruction as 16 bits.
