@@ -522,3 +522,13 @@ And we can inspect the generated instruction using objdump:
 
 800c:	e3a00103 	mov	r0, #-1073741824	; 0xc0000000
 ```
+
+### dot
+The dot “.” represents the current location in program memory. So:
+```assembly
+  b .
+```
+Tells the processor to jump to this very instruction, that is. execute it
+over and over in an endless loop. This is used often at the end of
+a microcontroller programs, as it prevents the processor from executing random
+data that is located in flash memory after the program.
