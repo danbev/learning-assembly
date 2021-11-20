@@ -596,5 +596,6 @@ $1 = 1111
 (gdb) p/t $r1
 $3 = 1011
 ```
-Notice how this instruction can be used to mask out single bits.
+Notice how this instruction can be used to mask out single bits. If we wanted
+to make out the topmost bits we could us 1100 (12 decimal).
 
