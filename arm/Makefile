@@ -53,6 +53,18 @@ rename: rename.o
 rename.o: src/rename.s
 	arm-none-eabi-as -g -o $@ $<
 
+mov: mov.o
+	arm-none-eabi-ld -g -o $@ $<
+
+mov.o: src/mov.s
+	arm-none-eabi-as -g -o $@ $<
+
+ldmia: ldmia.o
+	arm-none-eabi-ld -g -o $@ $<
+
+ldmia.o: src/ldmia.s
+	arm-none-eabi-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<

@@ -8,3 +8,4 @@ ldr
 func
 space
 rename
+ldmia

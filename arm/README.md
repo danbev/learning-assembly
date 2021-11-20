@@ -538,3 +538,42 @@ The following instruction is also an unconditional branch:
   b.n .
 ```
 The `.n` suffix is telling the assembler to encode this instruction as 16 bits.
+
+
+### STMIA/LDMIA
+Store and load multiple registers.
+Syntax:
+```assembly
+ ldmia Rn!, {reg_list}
+ stmia Rn!, {reg_list}
+```
+Example:
+```assembly
+8000358:       c302            stmia   r3!, {r1}
+```
+
+```console
+$ make ldmia
+$ qemu-arm ldmia
+$ qemu-arm -g 7777 ./ldmia
+```
+```console
+$ arm-none-eabi-gdb ldmia
+GNU gdb (GNU Arm Embedded 
+(gdb) br ldmia.s:15
+Breakpoint 1 at 0x8000: file src/ldmia.s, line 15.
+(gdb) target remote localhost:7777
+Remote debugging using localhost:7777
+_start () at src/ldmia.s:15
+(gdb) si
+(gdb) i r $r0 $r1 $r2 $r3 $r4 $r5
+r0             0x8000              32768
+r1             0x0                 0
+r2             0x1                 1
+r3             0x10                16
+r4             0x11                17
+r5             0x100               256
+```
+So notice that we have loaded all of the registers, r1, r2, r3 r4, and r5 with
+the values of the `array`. So with a single instruction we have loaded
+`multiple` registers.
