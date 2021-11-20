@@ -65,6 +65,12 @@ ldmia: ldmia.o
 ldmia.o: src/ldmia.s
 	arm-none-eabi-as -g -o $@ $<
 
+bic: bic.o
+	arm-none-eabi-ld -g -o $@ $<
+
+bic.o: src/bic.s
+	arm-none-eabi-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<

@@ -577,3 +577,24 @@ r5             0x100               256
 So notice that we have loaded all of the registers, r1, r2, r3 r4, and r5 with
 the values of the `array`. So with a single instruction we have loaded
 `multiple` registers.
+
+### bic (bit clear)
+```console
+$ make bic
+$ qemu-arm -g 7777 ./bic
+```
+```console
+$ arm-none-eabi-gdb bic
+(gdb) target remote localhost:7777
+Remote debugging using localhost:7777
+(gdb) si
+(gdb) p/t $r0
+$1 = 1111
+(gdb) f
+#0  _start () at src/bic.s:7
+7	  bic r1, r0, #4
+(gdb) p/t $r1
+$3 = 1011
+```
+Notice how this instruction can be used to mask out single bits.
+
