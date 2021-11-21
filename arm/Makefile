@@ -71,6 +71,12 @@ bic: bic.o
 bic.o: src/bic.s
 	arm-none-eabi-as -g -o $@ $<
 
+uxtb: uxtb.o
+	arm-none-eabi-ld -g -o $@ $<
+
+uxtb.o: src/uxtb.s
+	arm-none-eabi-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<

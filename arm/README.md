@@ -599,3 +599,27 @@ $3 = 1011
 Notice how this instruction can be used to mask out single bits. If we wanted
 to make out the topmost bits we could us 1100 (12 decimal).
 
+
+### Unsigned Extend type (uxtx)
+Where type can be `b` for byte, `h` for halfword, `w` for word`.
+So lets say we have a 4 bit binary value 1010 and want to extend this to
+8 bits this would just be 0000 1010. 
+
+Example: [uxtb.s](./src/uxtb.s]
+
+```console
+(gdb) p/x $r0
+$2 = 0xffffff65
+
+(gdb) si
+(gdb) p/t $r1
+$4 = 1100101
+
+(gdb) si
+(gdb) p/x $r1
+$6 = 0x65
+(gdb) p/x $r1
+$2 = 0xff65
+```
+Notice that this allows us to copy/cut/mask a portion of register. This would
+be useful when reading from a register. 
