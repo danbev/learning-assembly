@@ -623,3 +623,21 @@ $2 = 0xff65
 ```
 Notice that this allows us to copy/cut/mask a portion of register. This would
 be useful when reading from a register. 
+
+### Current Program Status Register
+Example: [psr.s](./src/psr.s)
+
+```console
+(gdb) x/tw $cpsr
+0x10:	00000000001010000000000000000010
+```
+Bit 31, is the negative condition flag and we can see that it is currently not
+set.  
+Bit 30, is the zero condition flag and we can see that it is currently not set.
+```console
+(gdb) p/t $cpsr
+$3 = 10000000000000000000000000010000
+(gdb) p/t ($cpsr & (1 << 31)) != 0
+$13 = 1
+```
+

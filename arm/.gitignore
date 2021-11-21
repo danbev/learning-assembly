@@ -11,3 +11,4 @@ rename
 ldmia
 bic
 uxtb
+psr

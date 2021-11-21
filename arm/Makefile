@@ -77,6 +77,12 @@ uxtb: uxtb.o
 uxtb.o: src/uxtb.s
 	arm-none-eabi-as -g -o $@ $<
 
+psr: psr.o
+	arm-none-eabi-ld -g -o $@ $<
+
+psr.o: src/psr.s
+	arm-none-eabi-as -g -o $@ $<
+
 .PHONY: run-first
 run-first: first
 	qemu-aarch64 $<
