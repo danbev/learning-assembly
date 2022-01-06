@@ -641,3 +641,14 @@ $3 = 10000000000000000000000000010000
 $13 = 1
 ```
 
+### Wait For Interrupt
+Allows the core to enter low power mode and stop executing code.
+```assembly
+  wfi
+```
+
+### Wait For Event
+Allows the core to enter low power mode and stop executing code.
+```assembly
+  wfe
+```
