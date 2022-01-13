@@ -29,10 +29,6 @@ Disassembly of section .data:
 	...
 ```
 
-Now, when I first saw this I was surprised to see the opcodes. I only thought
-that this would contain a value. The value value 02 is an opcode in the
-`ADD` x86 instruction set. 
-
 ## Check if zero/null
 [check_zero.s](./check_zero.s) contains an example of checking a register if
 it is zero by using the `test` opcode:
@@ -195,7 +191,7 @@ Disassembly of section .text:
 
 Disassembly of section .fini:
 ```
-So this is interesting, we are just place the 1 on the stack relative to the
+So this is interesting, we are just placing the 1 on the stack relative to the
 stack pointer (now remember that the position is given in hex! I keep forgetting
 this when debugging):
 ```console
@@ -215,7 +211,7 @@ And we can verify this by stepping over the next instruction using si
 ```
 Now, we have the `ptr` local variable which is loading the effective address
 of `%rsp - 16` into rax, which is the address of the first entry of the array.
-Next this value is stored in location `%rsp - 8`. 
+Next, this value is stored in location `%rsp - 8`. 
 ```console
 (lldb) register read rax
      rax = 0x0000000000401106  arr`main at arr.c:2:7
@@ -228,7 +224,7 @@ Next this value is stored in location `%rsp - 8`.
 0x7fffffffd0f0: 0xffffd0e8
 ```
 Now this might seem really trivial but it can be good to know how to actually
-create an array on the stack in assembler without having to first disassemble
+create an array on the stack in assembly without having to first disassemble
 c code.
 
 ### Stack addressing
@@ -256,7 +252,7 @@ Lets explore this a little using [arr.s](./arr.s):
 ```console
 (lldb) br s -n _start
 ```
-Now, lets say we want to see the the stack from the current rsp and 64 bytes
+Now, lets say we want to see the stack from the current rsp and 64 bytes
 down which is the stack where we can place values.
 To do this we have to remember that the stack grows downward, so we want to
 look at from the current rsp down 64 bytes which means subtracting 64 from rsp:
@@ -874,3 +870,11 @@ And this is the same as using `lea` to load the effective address.
 ```console
     0x401020 <+32>: leaq   0x402000, %rbx
 ```
+
+### .p2align directive
+This directive is used to pad the location counter
+```assembly
+.p2align 5,,31
+```
+This pads to align on a 32-byte boundry.
+
