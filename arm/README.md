@@ -641,14 +641,19 @@ $3 = 10000000000000000000000000010000
 $13 = 1
 ```
 
-### Wait For Interrupt
+### Wait For Interrupt (wfi)
 Allows the core to enter low power mode and stop executing code.
 ```assembly
   wfi
 ```
 
-### Wait For Event
+### Wait For Event (wfe)
 Allows the core to enter low power mode and stop executing code.
 ```assembly
   wfe
 ```
+
+### Signal Event (SEV)
+Causes an event to be signaled to all cores. So I think that if there there are
+multiple cores one core could issue a wfe and then calling SEV would wake it
+up.
