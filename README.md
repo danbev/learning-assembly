@@ -3116,3 +3116,171 @@ And this doing the same thing but we specify the source first and then have the
 destination which is also %rbp-0x20 but written in a different way.
 
 
+### Memory barriers
+These prevent reordering of memory operations both by the compiler and at
+runtime by the CPU.
+
+```c
+ a = 10; 
+ b = 20; 
+```
+These values are written to the CPUs cache, and at some point they will be
+written to main memory. The can be written in a different order as well as long
+as that does not affect the program logic.
+
+We want to be able to specify that one type of memory operation will be ensured
+to happen before another memory operation. Memory operations are load and store.
+So we could specify a barrier for load-load, load-store, store-store,
+and store-load.
+
+`Load-Load` says that any loads before this barrier should be done before
+the loads after the barrier.
+
+`Store-Store` says that any stores before this barrier should be done before
+the stores after the barrier.
+
+`Load-Store` says that any loads before this barrier should be done before any
+stores after the barrier. 
+
+`Store-Load` says that any stores before this barrier should be done before any
+loads after the barrier. 
+
+```
+Load-Load
+
+       load a
+  ------------------ memory barrier
+       load b
+```
+
+This means that if we specify a memory barrier after load a, then it will this
+will be guaranteed to happen. It actually means all loads before the barrier
+will happen before any of the loads after the barrier.
+And similar with store-store.
+
+```
+Load-Store
+
+       load a
+  ------------------ memory barrier
+       store b
+```
+So any load which would be assignment of a variable, in this case `a`, and 
+the store would be the assignement of 10 to b:
+```c
+  int x = a;
+  int b = 10;
+```
+Without a Load-Store barrier the compiler and/or the processor could reorder
+this to be:
+```
+  int b = 10;
+  int x = a;
+```
+
+```
+Store-Load
+
+       store a
+  ------------------ memory barrier
+       load b
+```
+For example:
+```c
+  int b = 10;
+  int x = a;
+```
+Without a Store-Load barrier the compiler and/or the processor could reorder
+this to be:
+```
+  int b = 10;
+  int x = a;
+```
+But with a Store-Load barrier it would remain the way we wrote it above.
+
+In the following example imaging that `a_not` is an atomic int that is used
+to notify the Thread B that is should be able to perform its operations.
+```
++---------+                +----------+
+|Thread A | a = 10;        | Thread B |  if (a_not == 1) {
+| a       | b = 20;        |  a       |    a = a + b + c
+| b       | c = 30;        |  b       |  }
+| c       | a_not = 1;     |  c       |
+| a_not   |                |  a_not   |
++---------+                +----------+
+```
+Now if we don't specify any memory barriers the compiler is allowed to reorder
+this case if it finds a reason to do so (like optimizations). Likewise the
+processor can also reorder these instructions. Notice that things could play
+out where a is set 10, followed by a_not being set to 1 in Thread A. Thread B
+could then check a_not and proceed but the values of b and c would not be what
+we intended. But if we where to insert a memory barrier:
+```c
+  a = 10;
+  b = 20;
+  c = 30;
+  ------------------ memory barrier
+  a_not = 1;
+```
+We should be able to get guarantees from the compiler and processor that they
+will not reorder these stores. But what kind of barrier should we use for this?  
+We want to have the stores (assignement of a, b, and c to happen before the
+assignment of a_not. We want the those store operations to happen before
+the store of a_note, so that would be Store-Store. While that is true for this
+example a real world case would probably use a Store-Store/Load-Store barrier
+here. And likewise Thread B would need to have a memory barrier as well, in it's
+case I think a Load-Store would be enough to make sure that the loading of a_not
+happens before the storing of a.
+
+The combination of Store-Store/Load-Store is called a `release` barrier. We are
+"releasing" values to be read by another thread.
+
+The combination of Load-Store/Load-Load is called a `aquire` barrier. We are
+"reading/accessing" values that where stored by another thread.
+
+In C++ std::atomic_int can have the barriers to be used specified:
+```c++
+  std::atomic_int a_not{0};
+  ...
+  a_not.store(1, std::memory_order_release);
+
+  a_not.load(1, std::memory_order_aquire);
+```
+
+### Memory reordering
+```c
+Thread A                       Thread B
+
+              int x = 0;
+              int y = 0;
+              int r1 = 0;
+              int r2 = 0;
+
+void something() {          void something() {
+  x = 1;                      y = 1;
+  r1 = y;                     r2 = x;
+}                           }
+```
+Now, it is alright for the compiler/processor to reorder these instructions
+and we could end up with something like:
+```
+Thread A                       Thread B
+  r1 = y;                      
+                               r2 = x;
+  x = 1;
+                               y = 1;
+
+  r1 = 0
+  r2 = 0
+   x = 1
+   y = 1
+```
+Prevent CPU reordering:
+```c
+asm volatile("mfence":::"memory"); 
+```
+Prevent compiler reordering:
+```c
+asm volatile("":::"memory");
+```
+
