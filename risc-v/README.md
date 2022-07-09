@@ -15,6 +15,28 @@ support the same ISA they can be implemented very differently.
 Both ARM and RISC-V are instruction set architectures (ISA) and there are both
 reduced instruction set computers (RISC).
 
+
+### ISA Specification
+https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf
+
+### Hardware Thread
+In the ISA they talk about Harts which is the same thing as a core in other
+ISAs.
+
+### Base Module
+If I've understood this correclty the base modules are RV32I, RV64I, and RV128I
+where RV stands for RISC-V, 32/64/128 the bus/register sized, and `I` stands for
+integer which refers to the operations available. 
+
+### Extension Modules
+Extension modules add to the base and add more operations. For example, the `M`
+extension stands for multiplication and adds multiply/divide instructions. I
+thought this was a bit odd and that mul/div should be included in the base, but
+there are many places  where only the simplest of operations are required, like
+small "stupid" small gadgets/devices. So it allows the manufacturers to only
+include what they actually will use.
+
+
 ### Install assembly/compiler tools
 ```console
 $ sudo dnf install -y gcc-riscv64-linux-gnu
