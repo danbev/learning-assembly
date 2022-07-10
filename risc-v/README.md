@@ -36,11 +36,17 @@ there are many places  where only the simplest of operations are required, like
 small "stupid" small gadgets/devices. So it allows the manufacturers to only
 include what they actually will use.
 
+### add instruction
+The following adds the contents of two registers and stores the result in the
+destination register:
+```assembly
+  add rd rs1 rs2
 
-### Install assembly/compiler tools
-```console
-$ sudo dnf install -y gcc-riscv64-linux-gnu
+rd  = distination register
+rs1 = source register 1
+rs2 = source register 2
 ```
+
 
 ### Compiling
 ```
@@ -48,3 +54,13 @@ $ make out/hello
 $ ./out/hello
 Bajja!
 ```
+
+### Debugging
+```console
+$ qemu-riscv64 -g 7777 out/hello
+```
+```console
+$ riscv64-unknown-linux-gnu-gdb ./out/hello
+Reading symbols from ./out/hello...
+(gdb) target remote localhost:7777
+``
