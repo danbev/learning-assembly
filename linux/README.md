@@ -71,7 +71,6 @@ contained in the memory location:
 ```
 And remember memory is read using little endian `00000a616a6a6162` which
 would then become `00000a62616a6a61`.
-```
 
 Using mov with `msg` will only copy the value `00000a616a6a6162` into a register
 for example. But to pass the msg to a function like write we would need to
