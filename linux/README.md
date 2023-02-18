@@ -150,9 +150,6 @@ of char pointers which we need to create.
 ```assembly
 ```
 And the last argument which is envp is passed in `%rdx`.
-```
-```assembly
-```
 
 ### array on the stack
 So it was not obvious to me how to create an array on the stack in assembly and
